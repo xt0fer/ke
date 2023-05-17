@@ -311,3 +311,40 @@ func TestAdd3(t *testing.T) {
 	}
 
 }
+
+func TestAddDeleteRune4(t *testing.T) {
+	//fname := "testtext.txt"
+	s := "0123456789"
+
+	tt := NewTable(s)
+
+	c := tt.allContents()
+
+	if c == s {
+		t.Errorf("contents after add %+v", c)
+	}
+
+	tt.add("xxx", 3)
+
+	c = tt.allContents()
+
+	if c == "012xxx3456789" {
+		t.Errorf("contents after add %+v", c)
+	}
+
+	tt.deleteRune(8)
+	c = tt.allContents()
+
+	if c == "012xxx346789" {
+		t.Errorf("contents after add %+v", c)
+	}
+
+	tt.deleteRune(4)
+	tt.dump()
+	c = tt.allContents()
+
+	if c == "012xx346789" {
+		t.Errorf("contents after add %+v", c)
+	}
+
+}

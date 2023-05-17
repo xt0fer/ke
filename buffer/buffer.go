@@ -3,6 +3,7 @@ package buffer
 import (
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 type Table struct {
@@ -49,6 +50,18 @@ func (t *Table) allContents() string {
 		s += string(*src)[p.Start : p.Start+p.Run-1]
 	}
 	return s
+}
+
+func (t *Table) dump() {
+	l := log.New(os.Stderr, "", 0)
+	l.Println("Table Dump")
+
+	l.Println("Content", t.Content)
+	l.Println("Add    ", t.Add)
+	for i := 0; i < len(t.Mods); i++ {
+		p := t.Mods[i]
+		p.dump(l)
+	}
 }
 
 // need to add observance of start, end
@@ -102,12 +115,6 @@ func (t *Table) insertPieceAt(index int, p *Piece) {
 	return
 }
 
-// func insert(a []int, index int, value int) []int {
-//     a = append(a[:index+1], a[index:]...) // Step 1+2
-//     a[index] = value                      // Step 3
-//     return a
-// }
-
 func (t *Table) pieceAt(idx int) (int, *Piece, int) {
 	i := idx
 	for j, p := range t.Mods {
@@ -127,18 +134,16 @@ func (t *Table) add(s string, pt int) error {
 	t.Add += s
 	// Updating the entry in piece table (breaking an entry into two or three)
 	if i == 0 {
-		// make np, p in table
 		// insert at p
 		t.insertPieceAt(e, np)
 		return nil
 	}
 	if i == p.Run {
-		// make p, np in table
 		// insert np at p+1
 		t.insertPieceAt(e+1, np)
 		return nil
 	}
-	// else split the piece and make left, np, right
+	// else split the piece and make { left, np, right }
 	left, right := p.splitAt(i)
 	t.insertPieceAt(e, left)
 	t.insertPieceAt(e+1, right)
@@ -164,6 +169,10 @@ func (p *Piece) trimRune(idx int) {
 	if idx == p.Run {
 		p.Run -= 1
 	}
+}
+
+func (p *Piece) dump(f *log.Logger) {
+	f.Println(p.Source, p.Start, p.Run)
 }
 
 // splits a piece into two
