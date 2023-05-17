@@ -1,6 +1,9 @@
 package buffer
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestSomething(t *testing.T) {
 	s := "this is a test string."
@@ -127,4 +130,72 @@ func TestIndex1(t *testing.T) {
 		t.Errorf("Index failed.")
 	}
 	//t.Errorf("b is %s", string(b))
+}
+
+func TestInsertPiece(t *testing.T) {
+	//fname := "testtext.txt"
+	s := "this is a test. "
+
+	tt := NewTable(s)
+
+	foo := "foo"
+	p := NewPiece(foo, 0, len(foo))
+	tt.insertPieceAt(0, p)
+	foo2 := "foo2"
+	q := NewPiece(foo2, 0, len(foo2))
+	tt.insertPieceAt(0, q)
+
+	for i, p := range tt.Mods {
+		fmt.Printf("%+v %+v\n", i, p)
+	}
+	t.Errorf("tt.Mods %+v", tt.Mods)
+}
+
+func TestAppendPiece(t *testing.T) {
+	//fname := "testtext.txt"
+	s := "this is a test. "
+
+	tt := NewTable(s)
+
+	foo := "foo"
+	p := NewPiece(foo, 0, len(foo))
+	tt.appendPiece(p)
+	foo2 := "foo2"
+	q := NewPiece(foo2, 0, len(foo2))
+	tt.appendPiece(q)
+
+	for i, p := range tt.Mods {
+		fmt.Printf("%+v %+v\n", i, p)
+	}
+	t.Errorf("tt.Mods %+v", tt.Mods)
+}
+func TestAppendInsertPiece(t *testing.T) {
+	//fname := "testtext.txt"
+	s := "this is a test. "
+
+	tt := NewTable(s)
+
+	foo := "foo"
+	p := NewPiece(foo, 0, len(foo))
+	tt.appendPiece(p)
+	foo2 := "foo2"
+	q := NewPiece(foo2, 0, len(foo2))
+	tt.insertPieceAt(1, q)
+
+	for i, p := range tt.Mods {
+		fmt.Printf("%+v %+v\n", i, p)
+	}
+	t.Errorf("tt.Mods %+v", tt.Mods)
+}
+
+func TestAllContents(t *testing.T) {
+	//fname := "testtext.txt"
+	s := "this is a test. "
+
+	tt := NewTable(s)
+
+	s0 := tt.allContents()
+	if s != s0 {
+		t.Errorf("s0 %+v", s0)
+	}
 }
