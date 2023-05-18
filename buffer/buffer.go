@@ -118,7 +118,6 @@ func (t *Table) insertPieceAt(index int, p *Piece) {
 	t.Mods = append(t.Mods[:index+1], t.Mods[index:]...)
 	t.Mods[index] = p
 	t.dump()
-	return
 }
 
 func (t *Table) pieceAt(idx int) (int, int) {
