@@ -45,8 +45,13 @@ func (editor *Editor) ForkInputHandler() {
 }
 
 func (e *Editor) HandleEvent(event term.Event) bool {
-	if event.Key == term.KeyCtrlQ {
+	if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlQ {
 		return false
+	}
+	if term.Key(event.Ch) == term.KeyCtrlX {
+		e.CtrlXFlag = true
+	} else {
+		e.CtrlXFlag = false
 	}
 	return true
 }

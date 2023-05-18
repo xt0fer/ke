@@ -10,7 +10,7 @@ type (
 )
 
 const (
-	EventKey    Key = iota
+	EventKey EventType = iota
 	EventResize
 	EventMouse
 	EventError
@@ -115,4 +115,27 @@ const (
 	KeySpace          Key = 0x20
 	KeyBackspace2     Key = 0x7F
 	KeyCtrl8          Key = 0x7F
+)
+
+const (
+	ModAlt Modifier = 1 << iota
+	ModMotion
+)
+
+// Input mode. See SetInputMode function.
+const (
+	InputEsc InputMode = 1 << iota
+	InputAlt
+	InputMouse
+	InputCurrent InputMode = 0
+)
+
+// Output mode. See SetOutputMode function.
+const (
+	OutputCurrent OutputMode = iota
+	OutputNormal
+	Output256
+	Output216
+	OutputGrayscale
+	OutputRGB
 )
