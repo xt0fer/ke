@@ -76,7 +76,7 @@ func (t *Table) allContents() string {
 		s += t.runForMod(i)
 	}
 	log.Println("ac: ", s)
-	return s
+	return string(s)
 }
 
 // need to add observance of start, end
@@ -170,8 +170,8 @@ func (t *Table) deleteRune(idx int) {
 	// else split into two pieces
 	left, right := p.splitAt(i)
 	//left.Run -= 1 // trim last rune of left (orig idx above)
-    right.Start += 1
-    right.Run -= 1
+	right.Start += 1
+	right.Run -= 1
 	t.deletePieceAt(which)
 	t.insertPieceAt(which, right)
 	t.insertPieceAt(which, left)
@@ -186,4 +186,22 @@ func LoadFile(filename string) *Table {
 	}
 
 	return NewTable(string(content))
+}
+
+func (t *Table) SaveToFile(filename string) error {
+	s := t.allContents()
+	f, err := os.Create("test.txt")
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(s)
+	if err != nil {
+		f.Close()
+		return err
+	}
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
