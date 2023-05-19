@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/kristofer/ke/buffer"
 	"github.com/kristofer/ke/term"
 )
 
@@ -8,7 +9,7 @@ type Editor struct {
 	Term      *term.Term
 	InputChan chan term.Event
 	// CurrentBuffer *Buffer /* current buffer */
-	// RootBuffer    *Buffer /* head of list of buffers */
+	RootBuffer *buffer.Buffer /* head of list of buffers */
 	// CurrentWindow *Window
 	// RootWindow    *Window
 	// status vars
@@ -31,6 +32,7 @@ type Editor struct {
 func NewEditor() *Editor {
 	e := &Editor{}
 	e.InputChan = make(chan term.Event, 20)
+	e.RootBuffer = buffer.NewBuffer("")
 	return e
 }
 
@@ -45,15 +47,24 @@ func (editor *Editor) ForkInputHandler() {
 }
 
 func (e *Editor) HandleEvent(event term.Event) bool {
-	if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlQ {
-		return false
-	}
-	if term.Key(event.Ch) == term.KeyCtrlX {
-		e.CtrlXFlag = true
-	} else {
-		e.CtrlXFlag = false
+	if event.Type == term.EventKey {
+		if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlQ {
+			return false
+		}
+		if term.Key(event.Ch) == term.KeyCtrlX {
+			e.CtrlXFlag = true
+		} else {
+			e.CtrlXFlag = false
+		}
+		// else a 'normal' rune
+		e.RootBuffer.AddRune(event.Ch)
 	}
 	return true
 }
 
-func (e *Editor) UpdateDisplay() {}
+func (e *Editor) UpdateDisplay() {
+	e.Term.Write([]byte(term.CUP(0, 0)))
+	e.Term.Write([]byte(term.ED(term.EraseToEnd)))
+	s := e.RootBuffer.T.AllContents()
+	e.Term.Write([]byte(s))
+}

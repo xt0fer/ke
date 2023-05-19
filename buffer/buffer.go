@@ -6,6 +6,11 @@ import (
 	"os"
 )
 
+type Buffer struct {
+	T     *Table
+	Point int
+	Mark  int
+}
 type PieceSource int
 
 const (
@@ -28,6 +33,20 @@ type Piece struct {
 	Run    int
 }
 
+func NewBuffer(c string) *Buffer {
+	b := &Buffer{}
+	b.T = &Table{Content: c, Add: "", Mods: []*Piece{}}
+	b.T.Mods = append(b.T.Mods, NewPiece(Content, 0, len(c)))
+	b.Point = 0
+	b.Mark = 0
+	return b
+}
+
+func (buf *Buffer) AddRune(r rune) {
+	buf.T.Insert(string(r), buf.Point)
+	buf.Point += 1
+}
+
 func NewTable(c string) *Table {
 	t := &Table{Content: c, Add: "", Mods: []*Piece{}}
 	t.Mods = append(t.Mods, NewPiece(Content, 0, len(c)))
@@ -38,7 +57,7 @@ func NewPiece(s PieceSource, pt, r int) *Piece {
 	return &Piece{Source: s, Start: pt, Run: r}
 }
 
-func (t *Table) size() int {
+func (t *Table) Size() int {
 	i := 0
 	for _, n := range t.Mods {
 		i += n.Run
@@ -54,7 +73,7 @@ func (t *Table) source(ps PieceSource) string {
 	}
 }
 
-func (t *Table) runForMod(index int) string {
+func (t *Table) RunForMod(index int) string {
 	p := t.Mods[index]
 	return t.source(p.Source)[p.Start : p.Start+p.Run]
 }
@@ -66,21 +85,21 @@ func (t *Table) tail(p *Piece, idx int) string {
 	return t.source(p.Source)[idx:]
 }
 
-func (t *Table) allContents() string {
+func (t *Table) AllContents() string {
 	//return t.contents(0, t.size())
 	// need golang's stringbuilder
 	s := ""
 
-	t.dump()
+	//t.dump()
 	for i := 0; i < len(t.Mods); i++ {
-		s += t.runForMod(i)
+		s += t.RunForMod(i)
 	}
-	log.Println("ac: ", s)
+	//log.Println("ac: ", s)
 	return string(s)
 }
 
 // need to add observance of start, end
-func (t *Table) contents(start, end int) string {
+func (t *Table) Contents(start, end int) string {
 	// need golang's stringbuilder
 	s := ""
 	si, ss := t.pieceAt(start)
@@ -91,15 +110,15 @@ func (t *Table) contents(start, end int) string {
 	endFrag := t.tail(ep, ee)
 	s += startFrag
 	for i := si + 1; i < ei; i++ {
-		s += t.runForMod(i)
+		s += t.RunForMod(i)
 	}
 	s += endFrag
 	return s
 }
 
-func (t *Table) indexOf(idx int) byte {
+func (t *Table) IndexOf(idx int) byte {
 	e, i := t.pieceAt(idx)
-	return t.runForMod(e)[i]
+	return t.RunForMod(e)[i]
 }
 
 func (t *Table) appendPiece(p *Piece) {
@@ -117,7 +136,7 @@ func (t *Table) insertPieceAt(index int, p *Piece) {
 	}
 	t.Mods = append(t.Mods[:index+1], t.Mods[index:]...)
 	t.Mods[index] = p
-	t.dump()
+	//t.dump()
 }
 
 func (t *Table) pieceAt(idx int) (int, int) {
@@ -132,13 +151,13 @@ func (t *Table) pieceAt(idx int) (int, int) {
 	return 0, 0
 }
 
-func (t *Table) add(s string, pt int) error {
+func (t *Table) Insert(s string, pt int) error {
 	e, i := t.pieceAt(pt)
 	p := t.Mods[e]
 	// Appending characters to the "add file" buffer, and
 	np := NewPiece(Add, len(t.Add), len(s))
 	t.Add += s
-	np.dump(log.New(os.Stderr, "np ", 0))
+	//np.dump(log.New(os.Stderr, "np ", 0))
 	// Updating the entry in piece table (breaking an entry into two or three)
 	if i == 0 {
 		// insert at p
@@ -160,7 +179,7 @@ func (t *Table) add(s string, pt int) error {
 	return nil
 }
 
-func (t *Table) deleteRune(idx int) {
+func (t *Table) DeleteRune(idx int) {
 	which, i := t.pieceAt(idx)
 	p := t.Mods[which]
 	if i == 0 || i == p.Run {
@@ -188,7 +207,7 @@ func LoadFile(filename string) *Table {
 }
 
 func (t *Table) SaveToFile(filename string) error {
-	s := t.allContents()
+	s := t.AllContents()
 	f, err := os.Create("test.txt")
 	if err != nil {
 		return err

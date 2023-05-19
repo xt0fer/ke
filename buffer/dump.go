@@ -16,7 +16,7 @@ func (t *Table) dump() {
 	for i := 0; i < len(t.Mods); i++ {
 		p := t.Mods[i]
 		p.dump(l)
-		l.Println(p, t.runForMod(i))
+		l.Println(p, t.RunForMod(i))
 	}
 	l.Println(">> End")
 

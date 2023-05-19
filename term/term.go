@@ -2,7 +2,6 @@ package term
 
 import (
 	"bufio"
-	"log"
 	"os"
 	"syscall"
 )
@@ -13,8 +12,7 @@ type Term struct {
 	Origin *syscall.Termios
 	// sigwinch       = make(chan os.Signal, 1)
 	// sigio          = make(chan os.Signal, 1)
-	quit  chan int
-
+	Quit chan int
 }
 
 func NewTerm() *Term {
@@ -40,15 +38,20 @@ func (t *Term) Cleanup() {
 
 func (t *Term) PollEvent() Event {
 	ru, _, err := t.Input.ReadRune()
-	log.Println("Event recv", ru)
+	//log.Println("Event recv", ru)
 	if err != nil {
 		panic(err)
 	}
 	e := Event{}
+	e.Type = EventKey
 	e.Ch = ru
 	return e
 }
 
+func (t *Term) Write(b []byte) {
+	t.Output.Write(b)
+	t.Output.Flush()
+}
 func Flush() {
 
 }
