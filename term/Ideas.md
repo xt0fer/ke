@@ -15,3 +15,5 @@
 - https://github.com/sparkeditor/piece-table/blob/master/index.js (a pretty simple piece table)
 - https://darrenburns.net/posts/piece-table/ (the Start of this mess)
 - https://en.wikipedia.org/wiki/Piece_table (how to do simplest of simple)
+
+what about something like this: https://github.com/jvns/tiny-remote-login
