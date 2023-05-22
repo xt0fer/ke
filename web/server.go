@@ -6,7 +6,16 @@ import (
 
 	"github.com/kristofer/ke/editor"
 	"github.com/kristofer/ke/term"
+
+	"github.com/gorilla/websocket"
 )
+
+// We'll need to define an Upgrader
+// this will require a Read and Write buffer size
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 func echoserver() {
 	http.HandleFunc("/editor", func(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +29,6 @@ func echoserver() {
 		log.Println("going into editor loop")
 		editor := editor.NewEditor()
 		for {
-			// Read message from browser
 			msgType, msg, err := conn.ReadMessage()
 			if err != nil {
 				return
@@ -32,17 +40,13 @@ func echoserver() {
 			if !ok {
 				return //exit editor
 			}
-			//			term.Flush()
-
-			// Print the message to the console
 
 			msg = []byte(term.CUP(0, 0))
 			msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
 			s := editor.RootBuffer.T.AllContents()
 			msg = append(msg, []byte(s)...)
-			log.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+			//log.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
 
-			// Write message back to browser
 			if err = conn.WriteMessage(msgType, msg); err != nil {
 				return
 			}
