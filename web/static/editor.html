@@ -25,35 +25,27 @@
         let term = new jsvt.Terminal();
 
         function hexify(str) {
-              var arr = [];
-              for (var i = 0; i < str.length; i++) {
-                     arr[i] = ("00" + str.charCodeAt(i).toString(16)).slice(-4);
-              }
-              return "\\u" + arr.join("\\u");
+            var arr = [];
+            for (var i = 0; i < str.length; i++) {
+                arr[i] = ("00" + str.charCodeAt(i).toString(16)).slice(-4);
+            }
+            return "\\u" + arr.join("\\u");
         }
 
         socket.onopen = function() {
-            term.Write('\x1b'+"[2J");
-            //$(document).keypress(send(event));
-            var xTriggered = 0;
-            $( window ).on( "keydown", function( event ) {
+            term.Write('\x1b' + "[2J");
+            $(window).on("keydown", function(event) {
                 let gets = term.InputString(event);
-                console.log("key: "+event.key+" -> "+hexify(gets))
+                //console.log("key: " + event.key + " -> " + hexify(gets))
                 socket.send(gets);
 
-            } );
+            });
         };
 
         socket.onmessage = function(e) {
             term.Write(e.data);
             $("#terminal").append(term.display);
         };
-
-        // function send(event) {
-        //     let gets = term.InputString(event);
-        //     console.log("input: "+gets)
-        //     socket.send(gets);
-        // }
     </script>
 </body>
 

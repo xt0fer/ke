@@ -1,6 +1,8 @@
 package editor
 
 import (
+	"log"
+
 	"github.com/kristofer/ke/buffer"
 	"github.com/kristofer/ke/term"
 )
@@ -48,9 +50,10 @@ func (editor *Editor) ForkInputHandler() {
 
 func (e *Editor) HandleEvent(event term.Event) bool {
 	if event.Type == term.EventKey {
+		// ctrl-X, ctrl-P does a debugging dump of the PieceTable
 		if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlP {
 			e.RootBuffer.T.Dump()
-			return false
+			return true
 		}
 		if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlQ {
 			return false
@@ -59,6 +62,11 @@ func (e *Editor) HandleEvent(event term.Event) bool {
 			e.CtrlXFlag = true
 		} else {
 			e.CtrlXFlag = false
+		}
+		if term.Key(event.Ch) == term.KeyEsc {
+			e.EscapeFlag = true
+		} else {
+			e.EscapeFlag = false
 		}
 		// else a 'normal' rune
 		e.RootBuffer.AddRune(event.Ch)

@@ -17,6 +17,15 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+func displayEditor(editor *editor.Editor) []byte {
+	msg := []byte(term.CUP(0, 0))
+	msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
+	s := editor.RootBuffer.T.AllContents()
+	msg = append(msg, []byte(s)...)
+	//log.Println("sizeof display is ", len(msg))
+	return msg
+}
+
 func echoserver() {
 	http.HandleFunc("/editor", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("serving editor page")
@@ -26,11 +35,22 @@ func echoserver() {
 		if err != nil {
 			panic("Nope. ")
 		}
-		log.Println("going into editor loop")
+		//log.Println("going into editor loop")
 		editor := editor.NewEditor()
+
+		m := displayEditor(editor)
+		// //log.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+
+		if err = conn.WriteMessage(1, m); err != nil {
+			log.Println("writing new editor failed.")
+			return
+		}
+
 		for {
 			msgType, msg, err := conn.ReadMessage()
+			log.Println("msgType", msgType)
 			if err != nil {
+				log.Println("unable to get message from frontend")
 				return
 			}
 
@@ -38,23 +58,26 @@ func echoserver() {
 
 			ok := editor.HandleEvent(event)
 			if !ok {
-				return //exit editor
+				msg := []byte(term.CUP(0, 0))
+				msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
+				msg = append(msg, []byte("Exiting...")...)
+				if err = conn.WriteMessage(msgType, msg); err != nil {
+				}
+				conn.Close()
+				break //exit editor
 			}
 
-			msg = []byte(term.CUP(0, 0))
-			msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
-			s := editor.RootBuffer.T.AllContents()
-			msg = append(msg, []byte(s)...)
-			//log.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+			msg = displayEditor(editor)
 
 			if err = conn.WriteMessage(msgType, msg); err != nil {
+				log.Println("unable to write message to frontend")
 				return
 			}
 		}
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("serving root page")
+		log.Println("starting up frontend")
 
 		http.ServeFile(w, r, "static/editor.html")
 	})
