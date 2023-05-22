@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-func (t *Table) dump() {
+func (t *Table) Dump() {
 	l := log.New(os.Stderr, "", 0)
 	_, filename, line, _ := runtime.Caller(1)
 	l.Println(">> Table Dump", "@", filename, line)

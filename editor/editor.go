@@ -48,6 +48,10 @@ func (editor *Editor) ForkInputHandler() {
 
 func (e *Editor) HandleEvent(event term.Event) bool {
 	if event.Type == term.EventKey {
+		if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlP {
+			e.RootBuffer.T.Dump()
+			return false
+		}
 		if e.CtrlXFlag && term.Key(event.Ch) == term.KeyCtrlQ {
 			return false
 		}

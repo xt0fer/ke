@@ -155,6 +155,12 @@ func (t *Table) Insert(s string, pt int) error {
 	e, i := t.pieceAt(pt)
 	p := t.Mods[e]
 	// Appending characters to the "add file" buffer, and
+	if len(t.Add) > 0 && len(t.Add) == (p.Start+p.Run) {
+		t.Add += s
+		p.Run += len(s)
+		//log.Println("adding a rune to existing slice")
+		return nil
+	}
 	np := NewPiece(Add, len(t.Add), len(s))
 	t.Add += s
 	//np.dump(log.New(os.Stderr, "np ", 0))
