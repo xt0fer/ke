@@ -5,6 +5,7 @@ go 1.18
 require (
 	fyne.io/fyne/v2 v2.3.4
 	github.com/creack/pty v1.1.18
+	github.com/gorilla/websocket v1.5.0
 )
 
 require (

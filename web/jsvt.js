@@ -1,11 +1,4 @@
 // Rudimentary VT100/Xterm emulator
-// Copyright (c) 2011, Ken Rockot
-// All rights reserved.
-//
-// This software may be distributed in any form and for
-// any purpose.  Do whatever you want with it.
-//
-// Requires jQuery to be loaded.
 
 jsvt = {};
 

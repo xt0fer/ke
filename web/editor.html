@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,11 +15,16 @@
 				term.Write("   Sweet.");
 				$("#terminal").append(term.display);
 			});
+
+			const socket = new WebSocket("ws://localhost:8005");
+			socket.onmessage = (event) => {
+    			term.Write(event.data);
+			}
 		</script>
 	</head>
 	<body>
 		<div class="px-4 pt-5 my-5 text-center border-bottom">
-		<h3 class="display-4 fw-bold text-body-emphasis">keditor</h3>
+		<h3 class="display-4 fw-bold text-body-emphasis">ke</h3>
 			  <div class="container px-5">
 					<div id="terminal" class="border border-warning" ></div>
 			  </div>
