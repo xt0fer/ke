@@ -4,6 +4,6 @@ import "testing"
 
 func TestEchoserver(t *testing.T) {
 
-	echoserver()
+	EditorServer()
 	//foo
 }

@@ -16,14 +16,15 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func echoserver() {
+func EditorServer() {
 	http.HandleFunc("/editor", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("serving editor page")
 
 		conn, err := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
 
 		if err != nil {
-			panic("Nope. ")
+			log.Println("Nope. No websocket created. see editorserver()")
+			return
 		}
 		//log.Println("going into editor loop")
 		editor := editor.NewEditor()
@@ -48,6 +49,7 @@ func echoserver() {
 			if !ok {
 				msg := editor.DisplayContents("Exiting...")
 				if err = conn.WriteMessage(msgType, msg); err != nil {
+					log.Println("unable to write [Exiting...]")
 				}
 				conn.Close()
 				break //exit editor
@@ -63,12 +65,9 @@ func echoserver() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("starting up frontend")
+		log.Println("serving main page")
 
 		http.ServeFile(w, r, "static/editor.html")
-	})
-	http.HandleFunc("/quit", func(w http.ResponseWriter, r *http.Request) {
-		panic("quitting websocket")
 	})
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))

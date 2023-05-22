@@ -75,7 +75,7 @@ func (e *Editor) HandleEvent(event term.Event) bool {
 func (e *Editor) UpdateTerminal() {
 	e.Term.Write([]byte(term.CUP(0, 0)))
 	e.Term.Write([]byte(term.ED(term.EraseToEnd)))
-	s := e.RootBuffer.T.AllContents()
+	s := e.CurrentScreen()
 	e.Term.Write([]byte(s))
 }
 
