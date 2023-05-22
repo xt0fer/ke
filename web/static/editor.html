@@ -8,28 +8,54 @@
     <script type='text/javascript' src='/static/jsvt.js'></script>
     <link rel="stylesheet" href="/static/style.css">
 
-    <script type='text/javascript'>
-        $(document).ready(function() {
-            term = new jsvt.Terminal();
-            term.Write("This is A kris terminal.\n");
-            term.Write("It's a \x1b[1;34mTERMINAL!\x1b[0m\n");
-            term.Write("   Sweet.");
-            $("#terminal").append(term.display);
-        });
 
-        const socket = new WebSocket("ws://localhost:8005");
-        socket.onmessage = (event) => {
-            term.Write(event.data);
-        }
-    </script>
+
 </head>
 
 <body>
     <div class="px-4 pt-5 my-5 text-center border-bottom">
+        <h3 class="display-4 fw-bold text-body-emphasis">ke</h3>
         <div class="container px-5">
             <div id="terminal" class="border border-warning"></div>
         </div>
     </div>
+
+    <script>
+        let input = document.getElementById("input");
+        let socket = new WebSocket("ws://localhost:8005/editor");
+        let term = new jsvt.Terminal();
+
+        function hexify(str) {
+              var arr = [];
+              for (var i = 0; i < str.length; i++) {
+                     arr[i] = ("00" + str.charCodeAt(i).toString(16)).slice(-4);
+              }
+              return "\\u" + arr.join("\\u");
+        }
+
+        socket.onopen = function() {
+            term.Write('\x1b'+"[2J");
+            //$(document).keypress(send(event));
+            var xTriggered = 0;
+            $( window ).on( "keydown", function( event ) {
+                let gets = term.InputString(event);
+                console.log("key: "+event.key+" -> "+hexify(gets))
+                socket.send(gets);
+
+            } );
+        };
+
+        socket.onmessage = function(e) {
+            term.Write(e.data);
+            $("#terminal").append(term.display);
+        };
+
+        // function send(event) {
+        //     let gets = term.InputString(event);
+        //     console.log("input: "+gets)
+        //     socket.send(gets);
+        // }
+    </script>
 </body>
 
 </html>

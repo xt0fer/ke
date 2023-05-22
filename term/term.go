@@ -2,8 +2,10 @@ package term
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"syscall"
+	"unicode/utf8"
 )
 
 type Term struct {
@@ -42,6 +44,22 @@ func (t *Term) PollEvent() Event {
 	if err != nil {
 		panic(err)
 	}
+	e := Event{}
+	e.Type = EventKey
+	e.Ch = ru
+	return e
+}
+
+func (t *Term) EventFromKey(key []byte) Event {
+	//ru, _, err := t.Input.ReadRune()
+	ru, n := utf8.DecodeRune(key)
+	if ru == utf8.RuneError && n == 1 {
+		log.Println("error on recv", ru)
+	}
+	//log.Println("Event recv", ru)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	e := Event{}
 	e.Type = EventKey
 	e.Ch = ru

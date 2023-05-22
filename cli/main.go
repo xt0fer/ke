@@ -9,8 +9,6 @@ func main() {
 
 	editor := editor.NewEditor()
 
-	go web.echoserver()
-
 	go editor.ForkInputHandler()
 	// Instead of using for {
 	// 	select {

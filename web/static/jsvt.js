@@ -624,93 +624,101 @@ jsvt.Terminal.prototype.ApplyDECReset = function(n) {
 }
 
 jsvt.Terminal.prototype.InputString = function(e) {
-	if(e.ctrl) {
+	if(e.ctrlKey) {
+		if (e.ctrlKey && e.key === "z") {
+			console.log("CONTROL_Z")
+			return "\x1a"
+		  }
+	  
 		if(e.key >= 65 && e.key <= 90) {
+			console.log("normal "+e.key)
 			return String.fromCharCode(e.key - 64);
 		}
 		switch(e.key) {
-			case $.Keys.Key2:
+			case $.Key2:
 				return "\x00";
-			case $.Keys.Key3:
-			case $.Keys.LeftBracket:
+			case $.Key3:
+			case $.LeftBracket:
 				return "\x1b";
-			case $.Keys.Key4:
+			case $.Key4:
 				return "\x1c";
-			case $.Keys.KeyRightBracket:
-			case $.Keys.Key5:
+			case $.KeyRightBracket:
+			case $.Key5:
 				return "\x1d";
-			case $.Keys.Key6:
+			case $.Key6:
 				return "\x1e";
-			case $.Keys.Key7:
+			case $.Key7:
 				return "\x1f";
-			case $.Keys.Key8:
+			case $.Key8:
 				return "\x7f";
 		}
 	}
 
 	switch(e.key) {
-		case $.Keys.Backspace:
+		case "Backspace":
+			console.log("backspace hit")
 			return "\x7f";
-		case $.Keys.Tab:
+		case $.Tab:
 			return "\x09";
-		case $.Keys.Escape:
+		case $.Escape:
 			return "\x1b";
-		case $.Keys.PageUp:
+		case $.PageUp:
 			return "\x1b[5~";
-		case $.Keys.PageDown:
+		case $.PageDown:
 			return "\x1b[6~";
-		case $.Keys.End:
+		case $.End:
 			return "\x1b[4~";
-		case $.Keys.Home:
+		case $.Home:
 			return "\x1b[1~";
-		case $.Keys.LeftArrow:
+		case $.LeftArrow:
 			if(this.applicationKeyMode)
 				return "\x1bOD";
 			return "\x1b[D";
-		case $.Keys.UpArrow:
+		case $.UpArrow:
 			if(this.applicationKeyMode)
 				return "\x1bOA";
 			return "\x1b[A";
-		case $.Keys.RightArrow:
+		case $.RightArrow:
 			if(this.applicationKeyMode)
 				return "\x1bOC";
 			return "\x1b[C";
-		case $.Keys.DownArrow:
+		case $.DownArrow:
 			if(this.applicationKeyMode)
 				return "\x1bOB";
 			return "\x1b[B";
-		case $.Keys.Delete:
+		case $.Delete:
 			return "\x1b[3~";
-		case $.Keys.Enter:
+		case $.Enter:
 			return "\x0d";
-		case $.Keys.Space:
+		case $.Space:
 			return " ";
-		case $.Keys.F1:
+		case $.F1:
 			return "\x1b[11~";
-		case $.Keys.F2:
+		case $.F2:
 			return "\x1b[12~";
-		case $.Keys.F3:
+		case $.F3:
 			return "\x1b[13~";
-		case $.Keys.F4:
+		case $.F4:
 			return "\x1b[14~";
-		case $.Keys.F5:
+		case $.F5:
 			return "\x1b[15~";
-		case $.Keys.F6:
+		case $.F6:
 			return "\x1b[17~";
-		case $.Keys.F7:
+		case $.F7:
 			return "\x1b[18~";
-		case $.Keys.F8:
+		case $.F8:
 			return "\x1b[19~";
-		case $.Keys.F9:
+		case $.F9:
 			return "\x1b[20~";
-		case $.Keys.F10:
+		case $.F10:
 			return "\x1b[21~";
-		case $.Keys.F11:
+		case $.F11:
 			return "\x1b[23~";
-		case $.Keys.F12:
+		case $.F12:
 			return "\x1b[24~";
 	}
 
-	return e.chr;
+	console.log("default "+e.key)
+	return e.key; //e.chr;
 }
 
