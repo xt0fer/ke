@@ -2,7 +2,7 @@ package web
 
 import "testing"
 
-func TestSomething(t *testing.T) {
+func TestEchoserver(t *testing.T) {
 
 	echoserver()
 
