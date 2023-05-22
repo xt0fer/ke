@@ -7,6 +7,8 @@ import (
 
 func echoserver() {
 	http.HandleFunc("/echo", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("serving echo page")
+
 		conn, err := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
 
 		if err != nil {
@@ -31,13 +33,15 @@ func echoserver() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "websocket.html")
+		log.Println("serving root page")
+
+		http.ServeFile(w, r, "static/websocket.html")
 	})
 	http.HandleFunc("/quit", func(w http.ResponseWriter, r *http.Request) {
 		panic("quitting websocket")
 	})
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	http.ListenAndServe(":8005", nil)
 }
