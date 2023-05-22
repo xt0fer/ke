@@ -16,7 +16,7 @@ func TestSomething(t *testing.T) {
 func TestPieceSplit1(t *testing.T) {
 	s := "this is a test string."
 	tt := NewTable(s)
-	tt.dump()
+	tt.Dump()
 	//    0123456789123456789212
 	p := NewPiece(Content, 0, len(s))
 
@@ -38,7 +38,7 @@ func TestPieceSplit1(t *testing.T) {
 func TestPieceSplit2(t *testing.T) {
 	s := "this is a test string."
 	tt := NewTable(s)
-	tt.dump()
+	tt.Dump()
 	//    0123456789123456789212
 	p := NewPiece(Content, 0, len(s))
 
@@ -59,7 +59,7 @@ func TestPieceSplit2(t *testing.T) {
 func TestPieceSplit3(t *testing.T) {
 	s := "this is a test string."
 	tt := NewTable(s)
-	tt.dump()
+	tt.Dump()
 	//    0123456789123456789212
 	p := NewPiece(Content, 0, len(s))
 
@@ -266,7 +266,7 @@ func TestAdd0(t *testing.T) {
 	s := "0123456789"
 
 	tt := NewTable(s)
-	tt.dump()
+	tt.Dump()
 
 	c := tt.AllContents()
 
@@ -275,7 +275,7 @@ func TestAdd0(t *testing.T) {
 	}
 
 	tt.Insert("xxx", 0)
-	tt.dump()
+	tt.Dump()
 
 	c = tt.AllContents()
 
@@ -284,7 +284,7 @@ func TestAdd0(t *testing.T) {
 	}
 
 	tt.Insert("xxx", tt.Size())
-	tt.dump()
+	tt.Dump()
 
 	c = tt.AllContents()
 
@@ -336,7 +336,7 @@ func TestAdd2(t *testing.T) {
 	}
 
 	tt.Insert("xxx", 1)
-	//tt.dump()
+	//tt.Dump()
 	c = tt.AllContents()
 
 	if c != "0xxx123456789" {
@@ -416,9 +416,9 @@ func TestAddDeleteRune1(t *testing.T) {
 		t.Errorf("%+v != %+v", c, s)
 	}
 
-	tt.dump()
+	tt.Dump()
 	tt.DeleteRune(8)
-	tt.dump()
+	tt.Dump()
 	c = tt.AllContents()
 
 	if c != "012xxx346789" {
@@ -455,7 +455,7 @@ func TestAddDeleteRune4(t *testing.T) {
 	}
 
 	tt.DeleteRune(4)
-	tt.dump()
+	tt.Dump()
 	c = tt.AllContents()
 
 	if c != "012xx346789" {

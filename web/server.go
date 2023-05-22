@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/kristofer/ke/editor"
-	"github.com/kristofer/ke/term"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,15 +14,6 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-}
-
-func displayEditor(editor *editor.Editor) []byte {
-	msg := []byte(term.CUP(0, 0))
-	msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
-	s := editor.RootBuffer.T.AllContents()
-	msg = append(msg, []byte(s)...)
-	//log.Println("sizeof display is ", len(msg))
-	return msg
 }
 
 func echoserver() {
@@ -38,8 +28,7 @@ func echoserver() {
 		//log.Println("going into editor loop")
 		editor := editor.NewEditor()
 
-		m := displayEditor(editor)
-		// //log.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+		m := editor.DisplayContents(editor.CurrentScreen())
 
 		if err = conn.WriteMessage(1, m); err != nil {
 			log.Println("writing new editor failed.")
@@ -48,7 +37,6 @@ func echoserver() {
 
 		for {
 			msgType, msg, err := conn.ReadMessage()
-			log.Println("msgType", msgType)
 			if err != nil {
 				log.Println("unable to get message from frontend")
 				return
@@ -58,16 +46,14 @@ func echoserver() {
 
 			ok := editor.HandleEvent(event)
 			if !ok {
-				msg := []byte(term.CUP(0, 0))
-				msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
-				msg = append(msg, []byte("Exiting...")...)
+				msg := editor.DisplayContents("Exiting...")
 				if err = conn.WriteMessage(msgType, msg); err != nil {
 				}
 				conn.Close()
 				break //exit editor
 			}
 
-			msg = displayEditor(editor)
+			msg = editor.DisplayContents(editor.CurrentScreen())
 
 			if err = conn.WriteMessage(msgType, msg); err != nil {
 				log.Println("unable to write message to frontend")

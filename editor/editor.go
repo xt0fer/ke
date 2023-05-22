@@ -1,8 +1,6 @@
 package editor
 
 import (
-	"log"
-
 	"github.com/kristofer/ke/buffer"
 	"github.com/kristofer/ke/term"
 )
@@ -74,9 +72,22 @@ func (e *Editor) HandleEvent(event term.Event) bool {
 	return true
 }
 
-func (e *Editor) UpdateDisplay() {
+func (e *Editor) UpdateTerminal() {
 	e.Term.Write([]byte(term.CUP(0, 0)))
 	e.Term.Write([]byte(term.ED(term.EraseToEnd)))
 	s := e.RootBuffer.T.AllContents()
 	e.Term.Write([]byte(s))
+}
+
+func (e *Editor) CurrentScreen() string {
+	return e.RootBuffer.T.AllContents()
+}
+
+func (editor *Editor) DisplayContents(s string) []byte {
+	msg := []byte(term.CUP(0, 0))
+	msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
+	//s := editor.RootBuffer.T.AllContents()
+	msg = append(msg, []byte(s)...)
+	//log.Println("sizeof display is ", len(msg))
+	return msg
 }
