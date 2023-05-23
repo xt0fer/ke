@@ -6,5 +6,5 @@ import (
 
 func TestEditor(t *testing.T) {
 	edit := &Editor{}
-	edit.StartEditor([]string{}, 0)
+	edit.StartEditor([]string{}, 0, nil)
 }

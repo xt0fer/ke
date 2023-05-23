@@ -332,7 +332,7 @@ jsvt.Terminal.prototype.TitleChange = function(handler) {
 // Parse a CSI or OSC control sequence being written to the terminal
 // Returns:
 // {
-// 		length 	// number of inupt bytes consumed
+// 		length 	// number of input bytes consumed
 //  	retry   // optional boolean, if true the caller should wait until it has more data and resend
 // }
 jsvt.Terminal.prototype.ParseControlSequence = function(seq) {

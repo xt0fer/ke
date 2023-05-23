@@ -117,6 +117,47 @@ const (
 	KeyCtrl8          Key = 0x7F
 )
 
+// Cell colors, you can combine a color with multiple attributes using bitwise
+// OR ('|').
+const (
+	ColorDefault Attribute = iota
+	ColorBlack
+	ColorRed
+	ColorGreen
+	ColorYellow
+	ColorBlue
+	ColorMagenta
+	ColorCyan
+	ColorWhite
+	ColorDarkGray
+	ColorLightRed
+	ColorLightGreen
+	ColorLightYellow
+	ColorLightBlue
+	ColorLightMagenta
+	ColorLightCyan
+	ColorLightGray
+)
+
+// Cell attributes, it is possible to use multiple attributes by combining them
+// using bitwise OR ('|'). Although, colors cannot be combined. But you can
+// combine attributes and a single color.
+//
+// It's worth mentioning that some platforms don't support certain attributes.
+// For example windows console doesn't support AttrUnderline. And on some
+// terminals applying AttrBold to background may result in blinking text. Use
+// them with caution and test your code on various terminals.
+const (
+	AttrBold Attribute = 1 << (iota + 9)
+	AttrBlink
+	AttrHidden
+	AttrDim
+	AttrUnderline
+	AttrCursive
+	AttrReverse
+	max_attr
+)
+
 const (
 	ModAlt Modifier = 1 << iota
 	ModMotion

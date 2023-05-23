@@ -38,7 +38,7 @@ func NewEditor() *Editor {
 
 func (editor *Editor) ForkInputHandler() {
 
-	editor.Term = term.NewTerm()
+	editor.Term = term.NewTerm(term.Pty)
 	defer editor.Term.Cleanup()
 
 	for {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/kristofer/ke/term"
-//	"github.com/nsf/termbox-go"
+	// "github.com/nsf/termbox-go"
 )
 
 func checkErr(e error) {
@@ -76,7 +76,11 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 	//checkErr(err)
 	// defer termbox.Close()
 	// e.Cols, e.Lines = termbox.Size()
-	e.Cols, e.Lines = e.Term.GetSize()
+	e.Term = term.NewTerm(term.Web)
+
+	e.Term.Kind = term.Web
+	e.Term.Conn = conn
+	e.Cols, e.Lines = e.Term.Size()
 
 	//editor.msg("NO file to open, creating scratch buffer")
 	e.CurrentBuffer = e.FindBuffer("*scratch*", true)
@@ -95,14 +99,10 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 
 	//m :=
 	e.UpdateDisplay()
-
-	if err := conn.WriteMessage(1, m); err != nil {
-		log.Println("writing new editor failed.")
-		return
-	}
+	e.Term.Flush()
 
 	for {
-		msgType, msg, err := conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("unable to get message from frontend")
 			return
@@ -110,27 +110,20 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 
 		event := e.Term.EventFromKey(msg)
 
-		ok := e.HandleEvent(event)
+		ok := e.HandleEvent(&event)
 		if !ok {
-			msg := e.DisplayContents("Exiting...")
-			if err = conn.WriteMessage(msgType, msg); err != nil {
-				log.Println("unable to write [Exiting...]")
-			}
 			conn.Close()
 			break //exit editor
 		}
 
-		msg = e.DisplayContents(e.CurrentScreen())
+		e.UpdateDisplay()
 
-		if err = conn.WriteMessage(msgType, msg); err != nil {
-			log.Println("unable to write message to frontend")
-			return
-		}
+		e.Term.Flush()
 	}
 }
 
 // handleEvent
-func (e *Editor) handleEvent(ev *term.Event) bool {
+func (e *Editor) HandleEvent(ev *term.Event) bool {
 	e.msg("")
 	switch ev.Type {
 	case term.EventKey:
@@ -164,18 +157,18 @@ func (e *Editor) handleEvent(ev *term.Event) bool {
 			// 	// and others..
 			// 	default:
 			// 	}
-			}
+			// }
 			e.CurrentWindow.OnKey(ev)
 		}
 		e.UpdateDisplay()
 	case term.EventResize:
-		term.Clear(term.ColorDefault, term.ColorDefault)
-		e.Cols, e.Lines = term.Size()
+		e.Term.Clear()
+		e.Cols, e.Lines = e.Term.Size()
 		e.msg("Resize: h %d,w %d", e.Lines, e.Cols)
 		e.CurrentWindow.WindowResize()
 		e.UpdateDisplay()
 	case term.EventMouse:
-		term.Clear(term.ColorDefault, term.ColorDefault)
+		e.Term.Clear()
 		e.msg("Mouse: r %d, c %d ", ev.MouseY, ev.MouseX)
 		e.SetPointForMouse(ev.MouseX, ev.MouseY)
 		e.UpdateDisplay()
@@ -252,7 +245,7 @@ func (e *Editor) msg(fm string, args ...interface{}) {
 
 func (e *Editor) drawString(x, y int, fg, bg term.Attribute, msg string) {
 	for _, c := range msg {
-		term.SetCell(x, y, c, fg, bg)
+		e.Term.SetCell(x, y, c, fg, bg)
 		x++
 	}
 }
@@ -311,10 +304,10 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 				if rch == '\t' {
 					c += 3 //? 8-(j&7) : 1;
 				}
-				term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
+				e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 				c++
 			} else {
-				term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
+				e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 				c++
 			}
 		}
@@ -423,7 +416,7 @@ func (e *Editor) setWindowForMouse(mc, mr int) (c, r int) {
 // ModeLine draw modeline for window
 func (e *Editor) ModeLine(wp *Window) {
 	var lch, mch, och rune
-	e.Cols, e.Lines = term.Size()
+	e.Cols, e.Lines = e.Term.Size()
 
 	if wp == e.CurrentWindow {
 		lch = '='
@@ -441,12 +434,12 @@ func (e *Editor) ModeLine(wp *Window) {
 	x := 0
 	y := wp.TopPt + wp.Rows + 1
 	for _, c := range temp {
-		term.SetCell(x, y, c, term.ColorBlack, e.BGColor)
+		e.Term.SetCell(x, y, c, term.ColorBlack, e.BGColor)
 		x++
 	}
 
 	for i := len(temp); i <= e.Cols; i++ {
-		term.SetCell(i, y, lch, term.ColorBlack, e.BGColor) // e.FGColor
+		e.Term.SetCell(i, y, lch, term.ColorBlack, e.BGColor) // e.FGColor
 	}
 }
 
@@ -456,11 +449,11 @@ func (e *Editor) displayPromptAndResponse(prompt string, response string) {
 		e.drawString(len(prompt), e.Lines-1, e.FGColor, term.ColorDefault, response)
 	}
 	e.blankFrom(e.Lines-1, len(prompt)+len(response))
-	term.SetCursor(len(prompt)+len(response), e.Lines-1)
-	term.Flush()
+	e.Term.SetCursor(len(prompt)+len(response), e.Lines-1)
+	// term.Flush()
 }
 
-func (e *Editor) getInput(prompt string) string {
+func (e *Editor) GetInput(prompt string) string {
 	fname := ""
 	var ev term.Event
 	e.displayPromptAndResponse(prompt, "")

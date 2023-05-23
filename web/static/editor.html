@@ -13,12 +13,9 @@
 </head>
 
 <body>
-    <div class="px-4 pt-5 my-5 text-center border-bottom">
-        <div class="container px-5">
-            <div id="terminal" class="border border-warning"></div>
-        </div>
+    <div class="container px-5">
+        <div id="terminal" class="border border-warning"></div>
     </div>
-
     <script>
         let input = document.getElementById("input");
         let socket = new WebSocket("ws://localhost:8005/editor");

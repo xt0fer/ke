@@ -4,39 +4,87 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"strings"
 	"syscall"
 	"unicode/utf8"
+
+	"github.com/gorilla/websocket"
+)
+
+type (
+	TermType int
+)
+
+const (
+	Web TermType = iota
+	Pty
 )
 
 type Term struct {
+	Kind   TermType
 	Input  *bufio.Reader
 	Output *bufio.Writer
 	Origin *syscall.Termios
 	// sigwinch       = make(chan os.Signal, 1)
 	// sigio          = make(chan os.Signal, 1)
-	Quit chan int
+	Quit     chan int
+	Contents strings.Builder
+	ScrBuf   *Screen
+	Conn     *websocket.Conn
+	CurCol int
+	CurRow int
 }
 
-func NewTerm() *Term {
+func NewTerm(kind TermType) *Term {
 	t := &Term{}
-	t.Input = bufio.NewReader(os.Stdin)
-	t.Output = bufio.NewWriter(os.Stdout)
-	stdin := os.Stdin.Fd()
-	termios := GetTermios(stdin)
+	t.Kind = kind
 
-	t.Origin = termios
+	if kind == Pty {
+		t.Input = bufio.NewReader(os.Stdin)
+		t.Output = bufio.NewWriter(os.Stdout)
+		stdin := os.Stdin.Fd()
+		termios := GetTermios(stdin)
 
-	SetRaw(termios)
-	SetTermios(stdin, termios)
+		t.Origin = termios
 
-	t.Output.Write([]byte(CSIStart()))
+		SetRaw(termios)
+		SetTermios(stdin, termios)
+		t.Output.Write([]byte(CSIStart()))
+
+	}
+
+	if kind == Web {
+		t.ScrBuf = NewScreen(24, 80)
+	}
+
 	return t
 }
 
+func (t *Term) IsPty() bool { return t.Kind == Pty }
+func (t *Term) IsWeb() bool { return t.Kind == Web }
+
 func (t *Term) Cleanup() {
-	t.Output.Write([]byte(CSIStart()))
-	SetTermios(os.Stdin.Fd(), t.Origin)
+	if t.IsPty() {
+		t.Output.Write([]byte(CSIStart()))
+		SetTermios(os.Stdin.Fd(), t.Origin)
+	}
 }
+
+// func (t *Term) Truncate() {
+// 	t.Contents.Reset()
+// }
+
+// func (t *Term) AppendBytes(buf []byte) {
+// 	t.Contents.Write(buf)
+// }
+
+// func (t *Term) Append(s string) {
+// 	t.Contents.Write([]byte(s))
+// }
+
+// func (t *Term) GetContents() []byte {
+// 	return []byte(t.Contents.String())
+// }
 
 func (t *Term) PollEvent() Event {
 	ru, _, err := t.Input.ReadRune()
@@ -67,9 +115,24 @@ func (t *Term) EventFromKey(key []byte) Event {
 }
 
 func (t *Term) Write(b []byte) {
-	t.Output.Write(b)
-	t.Output.Flush()
+	if t.Kind == Pty {
+		t.Output.Write(b)
+		t.Output.Flush()
+	}
+	if t.Kind == Web {
+
+	}
 }
-func Flush() {
+
+func (t *Term) Flush() {
+
+	if t.IsWeb() {
+		msgType := 1;
+		msg := t.ScrBuf.GetBytes()
+		if err := t.Conn.WriteMessage(msgType, msg); err != nil {
+			log.Println("unable to write message to frontend")
+			return
+		}
+	}
 
 }

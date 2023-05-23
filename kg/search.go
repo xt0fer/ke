@@ -6,12 +6,12 @@ const (
 )
 
 func (e *Editor) search() {
-	e.Searchtext = e.getInput("Search: ")
+	e.Searchtext = e.GetInput("Search: ")
 	found := e.CurrentBuffer.searchForward(e.CurrentBuffer.Point, e.Searchtext)
 	e.displaySearchResult(found, fwdsearch, "Search: ", e.Searchtext)
 }
 func (e *Editor) rsearch() {
-	e.Searchtext = e.getInput("R-Search: ")
+	e.Searchtext = e.GetInput("R-Search: ")
 	found := e.CurrentBuffer.searchBackwards(e.CurrentBuffer.Point, e.Searchtext)
 	e.displaySearchResult(found, revsearch, "R-Search: ", e.Searchtext)
 }
