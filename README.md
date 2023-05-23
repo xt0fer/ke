@@ -22,7 +22,7 @@ The _protocol_ between front end and back end in this case is just keyboard inpu
 
 ## Editor Machinery
 
-Going to integrate the contents of `github.com/kristofer/kg`
+Going to integrate the contents of `github.com/ke/kg`
 
 - add in `kg` code
 - wire up to `web/server`

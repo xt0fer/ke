@@ -1,4 +1,4 @@
-module github.com/kristofer/kg
+module github.com/ke/kg
 
 go 1.17
 
