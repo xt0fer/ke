@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
-	termbox "github.com/nsf/termbox-go"
 )
 
 func (e *Editor) quit() { e.Done = true }
@@ -65,7 +63,7 @@ func (e *Editor) yesno(flag bool, prompt string) bool {
 	e.displayPromptAndResponse(prompt, "")
 	e.MiniBufActive = true
 	defer func() { e.MiniBufActive = false }()
-	ev := <-e.EventChan
+	ev := <-e.InputChan
 	ch := ev.Ch
 	if ch == '\r' || ch == '\n' {
 		return flag
@@ -75,7 +73,8 @@ func (e *Editor) yesno(flag bool, prompt string) bool {
 }
 
 func (e *Editor) redraw() {
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	//termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	e.Term.Clear()
 	e.CurrentWindow.Updated = true
 	e.CurrentBuffer.Reframe = true
 	k := 0
@@ -84,7 +83,7 @@ func (e *Editor) redraw() {
 		k++
 	}
 	e.msg("editor redraw win(%d)", k)
-	e.updateDisplay()
+	e.UpdateDisplay()
 }
 
 func (e *Editor) left() {

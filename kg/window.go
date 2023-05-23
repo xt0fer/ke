@@ -3,7 +3,7 @@ package kg
 import (
 	"fmt"
 
-	termbox "github.com/nsf/termbox-go"
+	"github.com/kristofer/ke/term"
 	//termbox "github.com/gdamore/tcell/termbox"
 )
 
@@ -56,19 +56,36 @@ func (wp *Window) WindowResize() {
 }
 
 // OnKey handles the insertion of non-control/editor keys
-func (wp *Window) OnKey(ev *termbox.Event) {
+//
+//	func (wp *Window) OnKey(ev *termbox.Event) {
+//		switch ev.Key {
+//		case termbox.KeySpace:
+//			wp.Buffer.AddRune(' ')
+//		case termbox.KeyEnter, termbox.KeyCtrlJ:
+//			wp.Buffer.AddRune('\n')
+//		case termbox.KeyTab:
+//			wp.Buffer.AddRune('\t')
+//		default:
+//			if ev.Mod&termbox.ModAlt != 0 && wp.Editor.OnAltKey(ev) {
+//				// log.Println("Alt!", ev.Key, ev.Ch)
+//				break
+//			}
+//			wp.Buffer.AddRune(ev.Ch)
+//		}
+//	}
+func (wp *Window) OnKey(ev *term.Event) {
 	switch ev.Key {
-	case termbox.KeySpace:
+	case term.KeySpace:
 		wp.Buffer.AddRune(' ')
-	case termbox.KeyEnter, termbox.KeyCtrlJ:
+	case term.KeyEnter, term.KeyCtrlJ:
 		wp.Buffer.AddRune('\n')
-	case termbox.KeyTab:
+	case term.KeyTab:
 		wp.Buffer.AddRune('\t')
 	default:
-		if ev.Mod&termbox.ModAlt != 0 && wp.Editor.OnAltKey(ev) {
-			// log.Println("Alt!", ev.Key, ev.Ch)
-			break
-		}
+		// if ev.Mod&termbox.ModAlt != 0 && wp.Editor.OnAltKey(ev) {
+		// 	// log.Println("Alt!", ev.Key, ev.Ch)
+		// 	break
+		// }
 		wp.Buffer.AddRune(ev.Ch)
 	}
 }

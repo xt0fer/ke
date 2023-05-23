@@ -3,11 +3,12 @@ package kg
 import (
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"unicode"
 
-	termbox "github.com/nsf/termbox-go"
+	"github.com/gorilla/websocket"
+	"github.com/kristofer/ke/term"
+//	"github.com/nsf/termbox-go"
 )
 
 func checkErr(e error) {
@@ -17,7 +18,7 @@ func checkErr(e error) {
 }
 
 const (
-	version        = "kg 1.1, Public Domain, November 2021, Kristofer Younger,  No warranty."
+	version        = "kg 2.0, Public Domain, May 2023, Kristofer Younger,  No warranty."
 	nomark         = -1
 	gapchunk       = 16 //= 8096
 	idDefault      = 1
@@ -32,7 +33,9 @@ const (
 
 // Editor struct
 type Editor struct {
-	EventChan     chan termbox.Event
+	Term      *term.Term
+	InputChan chan term.Event
+	//EventChan     chan termbox.Event
 	CurrentBuffer *Buffer /* current buffer */
 	RootBuffer    *Buffer /* head of list of buffers */
 	CurrentWindow *Window
@@ -47,95 +50,99 @@ type Editor struct {
 	Keymap        []keymapt
 	Lines         int
 	Cols          int
-	FGColor       termbox.Attribute
-	BGColor       termbox.Attribute
+	FGColor       term.Attribute
+	BGColor       term.Attribute
 	EscapeFlag    bool
 	CtrlXFlag     bool
 	MiniBufActive bool
 }
 
 // StartEditor is the old C main function
-func (e *Editor) StartEditor(argv []string, argc int) {
+func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 	// log setup....
-	f, err := os.OpenFile("logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
+	// f, err := os.OpenFile("logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// if err != nil {
+	// 	log.Fatalf("error opening file: %v", err)
+	// }
+	// defer f.Close()
 
-	log.SetOutput(f)
-	f.Truncate(0)
-	log.Println("Start of Log...")
+	// log.SetOutput(f)
+	// f.Truncate(0)
+	// log.Println("Start of Log...")
 	//
-	e.FGColor = termbox.ColorDefault
-	e.BGColor = termbox.ColorWhite
-	err = termbox.Init()
-	checkErr(err)
-	defer termbox.Close()
-	e.Cols, e.Lines = termbox.Size()
+	// e.FGColor = termbox.ColorDefault
+	// e.BGColor = termbox.ColorWhite
+	// err = termbox.Init()
+	//checkErr(err)
+	// defer termbox.Close()
+	// e.Cols, e.Lines = termbox.Size()
+	e.Cols, e.Lines = e.Term.GetSize()
 
-	if argc > 1 {
-		for k := 1; k < argc; k++ {
-			e.CurrentBuffer = e.FindBuffer(argv[k], true)
-			e.InsertFile(argv[k], false)
-			/* Save filename regardless of load() success. */
-			e.CurrentBuffer.Filename = argv[k]
-		}
-	} else {
-		e.msg("NO file to open, creating scratch buffer")
-		e.CurrentBuffer = e.FindBuffer("*scratch*", true)
-		e.CurrentBuffer.Buffername = "*scratch*"
-		e.top()
-	}
+	//editor.msg("NO file to open, creating scratch buffer")
+	e.CurrentBuffer = e.FindBuffer("*scratch*", true)
+	e.CurrentBuffer.Buffername = "*scratch*"
+	//editor.top()
+
 	e.CurrentWindow = NewWindow(e)
 	e.RootWindow = e.CurrentWindow
 	e.CurrentWindow.OneWindow()
 	e.CurrentWindow.AssociateBuffer(e.CurrentBuffer)
 
-	if !(e.CurrentBuffer.GrowGap(gapchunk)) {
+	if !(e.CurrentBuffer.GrowGap(16)) {
 		panic("%s: Failed to allocate required memory.\n")
 	}
-	e.Keymap = keymap
-	termbox.SetInputMode(termbox.InputAlt | termbox.InputEsc | termbox.InputMouse)
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	e.updateDisplay()
-	termbox.Flush()
+	e.Keymap = Keymap
 
-	e.EventChan = make(chan termbox.Event, 20)
-	go func() {
-		for {
-			e.EventChan <- termbox.PollEvent()
-		}
-	}()
+	//m :=
+	e.UpdateDisplay()
 
-	// Instead of using for {
-	// 	select {
-	// 	case ev := <-e.EventChan:
+	if err := conn.WriteMessage(1, m); err != nil {
+		log.Println("writing new editor failed.")
+		return
+	}
 
-	for ev := range e.EventChan {
-		ok := e.handleEvent(&ev)
-		if !ok {
+	for {
+		msgType, msg, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("unable to get message from frontend")
 			return
 		}
-		e.updateDisplay()
-		termbox.Flush()
+
+		event := e.Term.EventFromKey(msg)
+
+		ok := e.HandleEvent(event)
+		if !ok {
+			msg := e.DisplayContents("Exiting...")
+			if err = conn.WriteMessage(msgType, msg); err != nil {
+				log.Println("unable to write [Exiting...]")
+			}
+			conn.Close()
+			break //exit editor
+		}
+
+		msg = e.DisplayContents(e.CurrentScreen())
+
+		if err = conn.WriteMessage(msgType, msg); err != nil {
+			log.Println("unable to write message to frontend")
+			return
+		}
 	}
 }
 
 // handleEvent
-func (e *Editor) handleEvent(ev *termbox.Event) bool {
+func (e *Editor) handleEvent(ev *term.Event) bool {
 	e.msg("")
 	switch ev.Type {
-	case termbox.EventKey:
-		if (ev.Mod & termbox.ModAlt) != 0 {
-			e.msg("FOUND ALT...")
-			switch ev.Ch {
-			case 'j':
-				e.msg("FOUND ALT J")
-			// and others..
-			default:
-			}
-		}
+	case term.EventKey:
+		// if (ev.Mod & termbox.ModAlt) != 0 {
+		// 	e.msg("FOUND ALT...")
+		// 	switch ev.Ch {
+		// 	case 'j':
+		// 		e.msg("FOUND ALT J")
+		// 	// and others..
+		// 	default:
+		// 	}
+		// }
 		if ev.Ch != 0 && (e.CtrlXFlag || e.EscapeFlag) {
 			_ = e.OnSysKey(ev)
 			if e.Done {
@@ -150,29 +157,29 @@ func (e *Editor) handleEvent(ev *termbox.Event) bool {
 			// if ev.Mod&termbox.ModAlt != 0 && e.OnAltKey(ev) {
 			// 	break
 			// }
-			if (ev.Mod & termbox.ModAlt) != 0 {
-				switch ev.Ch {
-				case 'j':
-					e.msg("FOUND ALT J")
-				// and others..
-				default:
-				}
+			// if (ev.Mod & termbox.ModAlt) != 0 {
+			// 	switch ev.Ch {
+			// 	case 'j':
+			// 		e.msg("FOUND ALT J")
+			// 	// and others..
+			// 	default:
+			// 	}
 			}
 			e.CurrentWindow.OnKey(ev)
 		}
-		e.updateDisplay()
-	case termbox.EventResize:
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-		e.Cols, e.Lines = termbox.Size()
+		e.UpdateDisplay()
+	case term.EventResize:
+		term.Clear(term.ColorDefault, term.ColorDefault)
+		e.Cols, e.Lines = term.Size()
 		e.msg("Resize: h %d,w %d", e.Lines, e.Cols)
 		e.CurrentWindow.WindowResize()
-		e.updateDisplay()
-	case termbox.EventMouse:
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		e.UpdateDisplay()
+	case term.EventMouse:
+		term.Clear(term.ColorDefault, term.ColorDefault)
 		e.msg("Mouse: r %d, c %d ", ev.MouseY, ev.MouseX)
 		e.SetPointForMouse(ev.MouseX, ev.MouseY)
-		e.updateDisplay()
-	case termbox.EventError:
+		e.UpdateDisplay()
+	case term.EventError:
 		panic(ev.Err)
 	}
 
@@ -180,23 +187,23 @@ func (e *Editor) handleEvent(ev *termbox.Event) bool {
 }
 
 // OnSysKey on Ctrl key pressed
-func (e *Editor) OnSysKey(ev *termbox.Event) bool {
+func (e *Editor) OnSysKey(ev *term.Event) bool {
 	switch ev.Key {
-	case termbox.KeyCtrlX:
+	case term.KeyCtrlX:
 		e.msg("C-X ")
 		e.CtrlXFlag = true
 		return true
-	case termbox.KeyEsc:
+	case term.KeyEsc:
 		e.msg("Esc ")
 		e.EscapeFlag = true
 		return true
-	case termbox.KeyCtrlQ:
+	case term.KeyCtrlQ:
 		e.Done = true
 		return true
-	case termbox.KeySpace, termbox.KeyEnter, termbox.KeyCtrlJ, termbox.KeyTab:
+	case term.KeySpace, term.KeyEnter, term.KeyCtrlJ, term.KeyTab:
 		e.CurrentWindow.OnKey(ev)
 		return true
-	case termbox.KeyArrowDown, termbox.KeyArrowLeft, termbox.KeyArrowRight, termbox.KeyArrowUp:
+	case term.KeyArrowDown, term.KeyArrowLeft, term.KeyArrowRight, term.KeyArrowUp:
 		e.CtrlXFlag = false
 		e.EscapeFlag = false
 		return e.searchAndPerform(ev)
@@ -205,7 +212,7 @@ func (e *Editor) OnSysKey(ev *termbox.Event) bool {
 	}
 }
 
-func (e *Editor) searchAndPerform(ev *termbox.Event) bool {
+func (e *Editor) searchAndPerform(ev *term.Event) bool {
 	rch := ev.Ch
 	if ev.Ch == 0 {
 		rch = rune(ev.Key)
@@ -233,7 +240,7 @@ func (e *Editor) searchAndPerform(ev *termbox.Event) bool {
 }
 
 // OnAltKey on Alt key pressed
-func (e *Editor) OnAltKey(ev *termbox.Event) bool {
+func (e *Editor) OnAltKey(ev *term.Event) bool {
 	e.msg("AltKey")
 	return false
 }
@@ -243,16 +250,16 @@ func (e *Editor) msg(fm string, args ...interface{}) {
 	e.Msgflag = true
 }
 
-func (e *Editor) drawString(x, y int, fg, bg termbox.Attribute, msg string) {
+func (e *Editor) drawString(x, y int, fg, bg term.Attribute, msg string) {
 	for _, c := range msg {
-		termbox.SetCell(x, y, c, fg, bg)
+		term.SetCell(x, y, c, fg, bg)
 		x++
 	}
 }
 
 func (e *Editor) displayMsg() {
 	if e.Msgflag {
-		e.drawString(0, e.Lines-1, e.FGColor, termbox.ColorDefault, e.Msgline)
+		e.drawString(0, e.Lines-1, e.FGColor, term.ColorDefault, e.Msgline)
 	}
 	e.blankFrom(e.Lines-1, len(e.Msgline))
 }
@@ -304,10 +311,10 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 				if rch == '\t' {
 					c += 3 //? 8-(j&7) : 1;
 				}
-				termbox.SetCell(c, r, rch, e.FGColor, termbox.ColorDefault)
+				term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 				c++
 			} else {
-				termbox.SetCell(c, r, rch, e.FGColor, termbox.ColorDefault)
+				term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 				c++
 			}
 		}
@@ -331,29 +338,29 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 		e.displayMsg()
 		e.setTermCursor(wp.Col, wp.Row) //bp.PointCol, bp.PointRow)
 	}
-	termbox.Flush() //refresh();
+	//term.Flush() //refresh();
 	wp.Updated = false
 }
 
 func (e *Editor) blankFrom(r, c int) { // blank line to end of term
 	for k := c; k < (e.Cols - 1); k++ {
-		termbox.SetCell(k, r, ' ', e.FGColor, termbox.ColorDefault)
+		e.Term.SetCell(k, r, ' ', e.FGColor, term.ColorDefault)
 	}
 }
 func (e *Editor) setTermCursor(c, r int) {
 	wp := e.CurrentWindow
 	wp.Col, wp.Row = c, r
-	termbox.SetCursor(c, r)
+	e.Term.SetCursor(c, r)
 	//// log.Printf("c %d r %d\n", c, r)
 }
 
-func (e *Editor) updateDisplay() {
+func (e *Editor) UpdateDisplay() {
 	bp := e.CurrentWindow.Buffer
 	bp.OrigPoint = bp.Point /* OrigPoint only ever set here */
 	/* only one window */
 	if e.RootWindow.Next == nil {
 		e.Display(e.CurrentWindow, true)
-		termbox.Flush()
+		//		term.Flush()
 		bp.PrevSize = bp.TextSize
 		return
 	}
@@ -416,7 +423,7 @@ func (e *Editor) setWindowForMouse(mc, mr int) (c, r int) {
 // ModeLine draw modeline for window
 func (e *Editor) ModeLine(wp *Window) {
 	var lch, mch, och rune
-	e.Cols, e.Lines = termbox.Size()
+	e.Cols, e.Lines = term.Size()
 
 	if wp == e.CurrentWindow {
 		lch = '='
@@ -434,52 +441,52 @@ func (e *Editor) ModeLine(wp *Window) {
 	x := 0
 	y := wp.TopPt + wp.Rows + 1
 	for _, c := range temp {
-		termbox.SetCell(x, y, c, termbox.ColorBlack, e.BGColor)
+		term.SetCell(x, y, c, term.ColorBlack, e.BGColor)
 		x++
 	}
 
 	for i := len(temp); i <= e.Cols; i++ {
-		termbox.SetCell(i, y, lch, termbox.ColorBlack, e.BGColor) // e.FGColor
+		term.SetCell(i, y, lch, term.ColorBlack, e.BGColor) // e.FGColor
 	}
 }
 
 func (e *Editor) displayPromptAndResponse(prompt string, response string) {
-	e.drawString(0, e.Lines-1, e.FGColor, termbox.ColorDefault, prompt)
+	e.drawString(0, e.Lines-1, e.FGColor, term.ColorDefault, prompt)
 	if response != "" {
-		e.drawString(len(prompt), e.Lines-1, e.FGColor, termbox.ColorDefault, response)
+		e.drawString(len(prompt), e.Lines-1, e.FGColor, term.ColorDefault, response)
 	}
 	e.blankFrom(e.Lines-1, len(prompt)+len(response))
-	termbox.SetCursor(len(prompt)+len(response), e.Lines-1)
-	termbox.Flush()
+	term.SetCursor(len(prompt)+len(response), e.Lines-1)
+	term.Flush()
 }
 
 func (e *Editor) getInput(prompt string) string {
 	fname := ""
-	var ev termbox.Event
+	var ev term.Event
 	e.displayPromptAndResponse(prompt, "")
 	e.MiniBufActive = true
 loop:
 	for {
-		ev = <-e.EventChan
+		ev = <-e.InputChan
 		if ev.Ch != 0 {
 			ch := ev.Ch
 			fname = fname + string(ch)
 		}
 		if ev.Ch == 0 {
 			switch ev.Key {
-			case termbox.KeyTab:
+			case term.KeyTab:
 				fname = fname + string('\t')
-			case termbox.KeySpace:
+			case term.KeySpace:
 				fname = fname + string(' ')
-			case termbox.KeyEnter, termbox.KeyCtrlR:
+			case term.KeyEnter, term.KeyCtrlR:
 				break loop
-			case termbox.KeyBackspace2, termbox.KeyBackspace:
+			case term.KeyBackspace2, term.KeyBackspace:
 				if len(fname) > 0 {
 					fname = fname[:len(fname)-1]
 				} else {
 					fname = ""
 				}
-			case termbox.KeyCtrlG:
+			case term.KeyCtrlG:
 				return ""
 			default:
 
@@ -648,7 +655,7 @@ func (e *Editor) setWindow(wp *Window) {
 	// 	/* push win vars to buffer */
 	// 	window2Buffer(e.CurrentWindow)
 	// }
-	e.updateDisplay()
+	e.UpdateDisplay()
 }
 
 // DeleteOtherWindows

@@ -9,8 +9,8 @@ type keymapt struct {
 }
 
 /* desc, keys, func */
-//keymap_t keymap[] = {
-var keymap = []keymapt{
+//keymap_t Keymap[] = {
+var Keymap = []keymapt{
 	{"C-a beginning-of-line    ", "\x01", (*Editor).lnbegin},
 	{"C-b backward-char        ", "\x02", (*Editor).left},
 	{"ArrowLeft backward-char  ", "\uFFEB", (*Editor).left},
