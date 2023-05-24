@@ -85,6 +85,7 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 	//editor.msg("NO file to open, creating scratch buffer")
 	e.CurrentBuffer = e.FindBuffer("*scratch*", true)
 	e.CurrentBuffer.Buffername = "*scratch*"
+	e.CurrentBuffer.setText("1 foo bar baz\n2 foo baz kristofer\n3 hello there.\n1234567890123456789012345678901234567890\n")
 	//editor.top()
 
 	e.CurrentWindow = NewWindow(e)
@@ -107,6 +108,7 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 			log.Println("unable to get message from frontend")
 			return
 		}
+		log.Printf("ev: |%x| |%s| \n", msg, string(msg))
 
 		event := e.Term.EventFromKey(msg)
 
@@ -127,15 +129,6 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 	e.msg("")
 	switch ev.Type {
 	case term.EventKey:
-		// if (ev.Mod & termbox.ModAlt) != 0 {
-		// 	e.msg("FOUND ALT...")
-		// 	switch ev.Ch {
-		// 	case 'j':
-		// 		e.msg("FOUND ALT J")
-		// 	// and others..
-		// 	default:
-		// 	}
-		// }
 		if ev.Ch != 0 && (e.CtrlXFlag || e.EscapeFlag) {
 			_ = e.OnSysKey(ev)
 			if e.Done {
@@ -147,17 +140,7 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 				return false
 			}
 		} else {
-			// if ev.Mod&termbox.ModAlt != 0 && e.OnAltKey(ev) {
-			// 	break
-			// }
-			// if (ev.Mod & termbox.ModAlt) != 0 {
-			// 	switch ev.Ch {
-			// 	case 'j':
-			// 		e.msg("FOUND ALT J")
-			// 	// and others..
-			// 	default:
-			// 	}
-			// }
+			//log.Println("e.CurrentWindow.OnKey", ev.String())
 			e.CurrentWindow.OnKey(ev)
 		}
 		e.UpdateDisplay()
@@ -183,6 +166,7 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 func (e *Editor) OnSysKey(ev *term.Event) bool {
 	switch ev.Key {
 	case term.KeyCtrlX:
+		log.Println("C-X")
 		e.msg("C-X ")
 		e.CtrlXFlag = true
 		return true
@@ -199,13 +183,13 @@ func (e *Editor) OnSysKey(ev *term.Event) bool {
 	case term.KeyArrowDown, term.KeyArrowLeft, term.KeyArrowRight, term.KeyArrowUp:
 		e.CtrlXFlag = false
 		e.EscapeFlag = false
-		return e.searchAndPerform(ev)
+		return e.RunKeymapFunction(ev)
 	default:
-		return e.searchAndPerform(ev)
+		return e.RunKeymapFunction(ev)
 	}
 }
 
-func (e *Editor) searchAndPerform(ev *term.Event) bool {
+func (e *Editor) RunKeymapFunction(ev *term.Event) bool {
 	rch := ev.Ch
 	if ev.Ch == 0 {
 		rch = rune(ev.Key)
@@ -219,7 +203,7 @@ func (e *Editor) searchAndPerform(ev *term.Event) bool {
 	}
 	for i, j := range e.Keymap {
 		if strings.Compare(lookfor, j.KeyBytes) == 0 {
-			//// log.Println("SearchAndPerform FOUND ", lookfor, e.Keymap[i])
+			log.Println("SearchAndPerform FOUND ", lookfor, e.Keymap[i])
 			do := e.Keymap[i].Do
 			if do != nil {
 				do(e) // execute function for key
@@ -259,6 +243,8 @@ func (e *Editor) displayMsg() {
 
 // Display draws the window, minding the buffer pagestart/pageend
 func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
+	e.Term.Blank()
+//	e.Term.SetCursor(0, 0)
 	bp := wp.Buffer
 	pt := bp.Point
 	// /* find start of screen, handle scroll up off page or top of file  */
@@ -304,8 +290,10 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 				if rch == '\t' {
 					c += 3 //? 8-(j&7) : 1;
 				}
-				e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
-				c++
+				if rch != '\n' {
+					e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
+					c++
+				}
 			} else {
 				e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 				c++
@@ -313,6 +301,7 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 		}
 
 		if rch == '\n' || e.Cols <= c {
+			log.Println("displaying NewLine", c, r)
 			e.blankFrom(r, c)
 			c -= e.Cols
 			if c < 0 {
@@ -337,7 +326,7 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 
 func (e *Editor) blankFrom(r, c int) { // blank line to end of term
 	for k := c; k < (e.Cols - 1); k++ {
-		e.Term.SetCell(k, r, ' ', e.FGColor, term.ColorDefault)
+		e.Term.SetCell(k, r, '~', e.FGColor, term.ColorDefault)
 	}
 }
 func (e *Editor) setTermCursor(c, r int) {
@@ -348,7 +337,6 @@ func (e *Editor) setTermCursor(c, r int) {
 }
 
 func (e *Editor) UpdateDisplay() {
-	e.Term.Blank()
 	bp := e.CurrentWindow.Buffer
 	bp.OrigPoint = bp.Point /* OrigPoint only ever set here */
 	/* only one window */

@@ -73,7 +73,9 @@ func (e *Editor) yesno(flag bool, prompt string) bool {
 }
 
 func (e *Editor) redraw() {
+	log.Println("redrawing...")
 	//termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	e.Term.SetCursor(0, 0)
 	e.Term.Clear()
 	e.CurrentWindow.Updated = true
 	e.CurrentBuffer.Reframe = true

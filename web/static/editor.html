@@ -33,9 +33,12 @@
             term.Write('\x1b' + "[2J");
             $(window).on("keydown", function(event) {
                 let gets = term.InputString(event);
-                //console.log("key: " + event.key + " -> " + hexify(gets))
-                socket.send(gets);
-
+                console.log("key: " + event.key + " -> " + hexify(gets))
+                if (event.key != "Control") {
+                    socket.send(gets);
+                } else {
+                    //console.log("CONTROL DROPPED: " + event.key + " -> " + hexify(gets))
+                }
             });
         };
 

@@ -1,5 +1,7 @@
 package term
 
+import "fmt"
+
 type (
 	InputMode  int
 	OutputMode int
@@ -33,6 +35,11 @@ type Event struct {
 	MouseX int       // x coord of mouse
 	MouseY int       // y coord of mouse
 	N      int       // number of bytes written when getting a raw event
+}
+
+func (ev *Event) String() string {
+	s := fmt.Sprintf("event: Type(%v) Mod(%v) Key(%v) Ch(%v)", ev.Type, ev.Mod, ev.Key, ev.Ch)
+	return s
 }
 
 // Key constants, see Event.Key field.

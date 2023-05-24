@@ -23,6 +23,17 @@ func CSIEnd() string {
 	return (fmt.Sprintf("%s<u", CSI))
 }
 
+// SHOWCUR - dhow cursor
+func CURBLK() string {
+	return (fmt.Sprintf("%s0 q", CSI))
+}
+func CURSHOW() string {
+	return (fmt.Sprintf("%s?25h", CSI))
+}
+func CURHIDE() string {
+	return (fmt.Sprintf("%s?25l", CSI))
+}
+
 // CUU - Cursor Up
 func CUU(n int) string {
 	return (fmt.Sprintf("%s%dA", CSI, n))
@@ -59,8 +70,8 @@ func CHA(n int) string {
 }
 
 // CUP - Cursor Position
-func CUP(m, n int) string {
-	return (fmt.Sprintf("%s%d;%dH", CSI, n, m))
+func CUP(c, r int) string {
+	return (fmt.Sprintf("%s%d;%dH", CSI, r, c))
 }
 
 type EraseType int
@@ -72,13 +83,17 @@ const (
 )
 
 // ED - Erase in Display
-// If n is 0, clear from cursor to end of screen. If n is 1, clear from cursor to beginning of the screen. If n is 2, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS).
+// If n is 0, clear from cursor to end of screen.
+// If n is 1, clear from cursor to beginning of the screen.
+// If n is 2, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS).
 func ED(n EraseType) string {
 	return (fmt.Sprintf("%s%dJ", CSI, n))
 }
 
 // EL - Erase in Line
-// If n is 0 (or missing), clear from cursor to the end of the line. If n is 1, clear from cursor to beginning of the line. If n is 2, clear entire line. Cursor position does not change.
+// If n is 0 (or missing), clear from cursor to the end of the line.
+// If n is 1, clear from cursor to beginning of the line.
+// If n is 2, clear entire line. Cursor position does not change.
 func EL(n EraseType) string {
 	return (fmt.Sprintf("%s%dK", CSI, n))
 }

@@ -1,10 +1,18 @@
 package term
 
+import "log"
+
 // command.go:     termbox "github.com/nsf/termbox-go"
 // command.go:     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 func (t *Term) Clear() {
 	//termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	t.Output.Write([]byte(ED(2)))
+	if t.IsPty() {
+		t.Output.Write([]byte(ED(2)))
+	}
+	if t.IsWeb() {
+		t.Write([]byte(ED(2)))
+		//t.Write([]byte(CURBLK()))
+	}
 }
 
 // editor.go:      termbox "github.com/nsf/termbox-go"
@@ -16,8 +24,9 @@ func (t *Term) Clear() {
 // editor.go:      err = termbox.Init()
 // editor.go:      defer termbox.Close()
 // editor.go:      e.Cols, e.Lines = termbox.Size()
+
 func (t *Term) Size() (int, int) {
-	return 24, 80
+	return 40, 12 // termsize cols, rows; 80, 24
 }
 
 // editor.go:      termbox.SetInputMode(termbox.InputAlt | termbox.InputEsc | termbox.InputMouse)
@@ -58,13 +67,17 @@ func (t *Term) Size() (int, int) {
 // editor.go:              termbox.SetCell(x, y, c, termbox.ColorBlack, e.BGColor)
 // editor.go:              termbox.SetCell(i, y, lch, termbox.ColorBlack, e.BGColor) // e.FGColor
 func (t *Term) SetCell(c, r int, ch rune, fg, bg Attribute) {
+	// switch zero-based to one-based?
 	t.ScrBuf.Set(c, r, ch)
 }
 func (t *Term) SetCursor(c int, r int) {
+	log.Println("cursor", c, r)
 	t.CurCol = c
 	t.CurRow = r
 	//^[[<r>;<c>H
-
+	if t.IsWeb() {
+		t.Write([]byte(CUP(c, r)))
+	}
 }
 
 // editor.go:      e.drawString(0, e.Lines-1, e.FGColor, termbox.ColorDefault, prompt)

@@ -78,7 +78,7 @@ jsvt.Terminal = function() {
 
     this.buffer = this.normalBuffer;
 
-    this.Resize(80, 25);
+    this.Resize(40, 24) //termsize 80, 24 cols, rows
 
     this.writeBuffer = "";
     this.inVisualBell = false;

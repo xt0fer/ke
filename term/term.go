@@ -31,8 +31,8 @@ type Term struct {
 	Contents strings.Builder
 	ScrBuf   *Screen
 	Conn     *websocket.Conn
-	CurCol int
-	CurRow int
+	CurCol   int
+	CurRow   int
 }
 
 func NewTerm(kind TermType) *Term {
@@ -54,7 +54,7 @@ func NewTerm(kind TermType) *Term {
 	}
 
 	if kind == Web {
-		t.ScrBuf = NewScreen(24, 80)
+		t.ScrBuf = NewScreen(40, 12) // termsize cols, rows
 	}
 
 	return t
@@ -104,13 +104,18 @@ func (t *Term) EventFromKey(key []byte) Event {
 	if ru == utf8.RuneError && n == 1 {
 		log.Println("error on recv", ru)
 	}
-	//log.Println("Event recv", ru)
-	// if err != nil {
-	// 	panic(err)
-	// }
 	e := Event{}
-	e.Type = EventKey
-	e.Ch = ru
+	if Key(ru) >= KeyCtrlTilde && Key(ru) <= KeySpace {
+		e.Type = EventKey
+		e.Key = Key(ru)
+		e.Ch = 0
+		log.Println(e.String())
+
+	} else {
+		e.Type = EventKey
+		e.Ch = ru
+		log.Println(e.String())
+	}
 	return e
 }
 
@@ -120,7 +125,12 @@ func (t *Term) Write(b []byte) {
 		t.Output.Flush()
 	}
 	if t.Kind == Web {
-
+		msgType := 1
+		msg := b
+		if err := t.Conn.WriteMessage(msgType, msg); err != nil {
+			log.Println("unable to write message to frontend")
+			return
+		}
 	}
 }
 
@@ -131,7 +141,9 @@ func (t *Term) Blank() {
 func (t *Term) Flush() {
 
 	if t.IsWeb() {
-		msgType := 1;
+		t.Write([]byte(ED(2)))
+		t.Write([]byte(CUP(0, 0)))
+		msgType := 1
 		msg := t.ScrBuf.GetBytes()
 		if err := t.Conn.WriteMessage(msgType, msg); err != nil {
 			log.Println("unable to write message to frontend")
