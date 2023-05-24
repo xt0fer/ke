@@ -124,6 +124,10 @@ func (t *Term) Write(b []byte) {
 	}
 }
 
+func (t *Term) Blank() {
+	t.ScrBuf.Blank()
+}
+
 func (t *Term) Flush() {
 
 	if t.IsWeb() {

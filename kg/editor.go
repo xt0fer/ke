@@ -348,6 +348,7 @@ func (e *Editor) setTermCursor(c, r int) {
 }
 
 func (e *Editor) UpdateDisplay() {
+	e.Term.Blank()
 	bp := e.CurrentWindow.Buffer
 	bp.OrigPoint = bp.Point /* OrigPoint only ever set here */
 	/* only one window */
