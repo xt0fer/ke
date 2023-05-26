@@ -25,7 +25,8 @@ jsvt.Terminal = function() {
     this.rows = 0;
     this.cols = 0;
     this.scrollBufferLines = 1000;
-    this.title = "jsvt";
+    this.title = "ke";
+    this.writes = 0;
     this.titleHandler = function(title) {}
 
     this.display = $("<div/>").css("display", "inline-block");
@@ -41,7 +42,7 @@ jsvt.Terminal = function() {
             cursor: { x: 0, y: 0 }, // current cursor position in the virtual buffer
             lines: [], // visible line buffer
             attr: { // character attributes used for newly written characters
-                // fgColor: 2,
+                fgColor: 10,
                 bgColor: 15,
                 bold: false,
                 underline: false,
@@ -78,7 +79,8 @@ jsvt.Terminal = function() {
 
     this.buffer = this.normalBuffer;
 
-    this.Resize(40, 24) //termsize 80, 24 cols, rows
+
+    this.Resize(80, 24) //termsize 80, 24 cols, rows
 
     this.writeBuffer = "";
     this.inVisualBell = false;
@@ -100,12 +102,12 @@ jsvt.Terminal = function() {
 
 jsvt.Terminal.prototype.Resize = function(w, h) {
     var cellT = $("<pre/>")
-        // .css("background", jsvt.TerminalColors[7])
-        // .css("color", jsvt.TerminalColors[2])
+        // .css("background", jsvt.TerminalColors[15])
+        // .css("color", jsvt.TerminalColors[0])
         // .css("font-family", "DejaVu Sans Mono, Bitstream Vera Sans Mono, monospace")
         // .css("font-size", "10pt")
         .css("display", "inline")
-        .text(" ");
+        .text("-");
 
     this.display.empty();
     this.screen = [];
@@ -129,6 +131,7 @@ jsvt.Terminal.prototype.Resize = function(w, h) {
 
 // Writes a character sequence to the terminal buffer.
 jsvt.Terminal.prototype.Write = function(msg) {
+    console.log("Write>>\n", msg)
     msg = this.writeBuffer + msg;
     this.writeBuffer = "";
 
@@ -137,7 +140,7 @@ jsvt.Terminal.prototype.Write = function(msg) {
         switch (c) {
             case '\x1b': // ESC
                 // String may be incomplete here.  Buffer until next Write.
-                if (msg.length == i + 1) {
+                if (msg.length == i + 1) { //if last char is an esc, save it
                     this.writeBuffer = msg[i];
                     return;
                 }
@@ -197,6 +200,8 @@ jsvt.Terminal.prototype.Write = function(msg) {
                 }
                 break;
             case '\x0a': //LF
+                //console.log(">>newline", this.buffer.cursor.y)
+
                 var scrollBottom = this.buffer.useScrollRegion ? this.buffer.scrollBottom : this.rows - 1;
                 if (this.buffer.cursor.y == scrollBottom)
                     this.ShiftLinesUp();
@@ -223,6 +228,7 @@ jsvt.Terminal.prototype.SetCursorRow = function(r) {
 }
 
 jsvt.Terminal.prototype.SetCursor = function(c, r) {
+    //console.log("set cursor", c, r)
     this.buffer.cursor.x = c;
     this.buffer.cursor.y = r;
 }
@@ -246,8 +252,8 @@ jsvt.Terminal.prototype.ShiftLinesUp = function() {
 // Writes a single character at the cursor in the current buffer.
 // Advances the cursor accordingly.
 jsvt.Terminal.prototype.WriteCharacter = function(c) {
+    this.writes += 1;
     var line = this.buffer.lines[this.buffer.cursor.y];
-
     // lazily translate tab characters to 4 spaces; no tabstop aligment yet
     if (c == '\x09') {
         for (var i = 0; i < 4; ++i)
@@ -260,20 +266,21 @@ jsvt.Terminal.prototype.WriteCharacter = function(c) {
         cell.attr[k] = this.buffer.attr[k];
 
     line[this.buffer.cursor.x] = cell;
-    if (this.buffer.cursor.x < this.cols - 1)
-        this.SetCursorCol(this.buffer.cursor.x + 1);
-    else {
-        var scrollBottom = this.buffer.useScrollRegion ? this.buffer.scrollBottom : this.rows - 1;
-        if (this.buffer.cursor.y == scrollBottom)
-            this.ShiftLinesUp();
-        else
-            this.SetCursorRow(this.buffer.cursor.y + 1);
-        this.SetCursorCol(0);
-    }
+    // if (this.buffer.cursor.x < this.cols) // was <= -1
+    //     this.SetCursorCol(this.buffer.cursor.x + 1);
+    // else {
+    //     // var scrollBottom = this.buffer.useScrollRegion ? this.buffer.scrollBottom : this.rows - 1;
+    //     // if (this.buffer.cursor.y == scrollBottom)
+    //     //     this.ShiftLinesUp();
+    //     // else
+    //     this.SetCursorRow(this.buffer.cursor.y + 1);
+    //     this.SetCursorCol(0);
+    // }
 }
 
 jsvt.Terminal.prototype.UpdateDisplay = function() {
     if (this.forceRedraw || typeof(this.oldScreen) == 'undefined' || this.oldScreen.length != this.rows || this.oldScreen[0].length != this.cols) {
+        console.log(">> refresh oldScreen")
         this.oldScreen = [];
         for (var i = 0; i < this.rows; ++i) {
             var row = [];
@@ -285,8 +292,11 @@ jsvt.Terminal.prototype.UpdateDisplay = function() {
         this.forceRedraw = false;
     }
 
+    console.log(">> UpdateDisplay", this.rows * this.cols, this.buffer.lines[0].slice(0, 5))
+
     for (var i = 0; i < this.rows; ++i) {
         var line = this.buffer.lines[i];
+        //console.log(">>", i, line)
         for (var j = 0; j < this.cols; ++j) {
             var cell = line[j];
             var chr = " ";
@@ -317,11 +327,13 @@ jsvt.Terminal.prototype.UpdateDisplay = function() {
     }
     var cur = this.buffer.cursor;
     var curAttr = {
-        // background: jsvt.TerminalColors[10],
-        // color: jsvt.TerminalColors[0]
+        background: jsvt.TerminalColors[11],
+        color: jsvt.TerminalColors[0]
     };
     this.screen[cur.y][cur.x].css(curAttr);
     this.oldScreen[cur.y][cur.x].attr = curAttr;
+    console.log("writes>>", this.writes, this.buffer.lines.length, this.buffer.lines[0])
+
 }
 
 // Set a handler to receive title change events that occur via the OSC sequence.
@@ -375,10 +387,12 @@ jsvt.Terminal.prototype.ParseControlSequence = function(seq) {
                 this.ApplySGRAttribute(params[i]);
             break;
         case 'h': // DECSET (set option)
+            //console.log("DEC_SET")
             for (var i = 0; i < params.length; ++i)
                 this.ApplyDECSetting(params[i]);
             break;
         case 'l': // DECRST (reset option)
+            //console.log("DEC_RESET")
             for (var i = 0; i < params.length; ++i)
                 this.ApplyDECReset(params[i]);
             break;

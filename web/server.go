@@ -91,6 +91,12 @@ func EditorServer() {
 		http.ServeFile(w, r, "static/editor.html")
 	})
 
+	http.HandleFunc("/vt100", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("serving main page")
+
+		http.ServeFile(w, r, "static/vt100.html")
+	})
+
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	http.ListenAndServe(":8005", nil)

@@ -1,6 +1,32 @@
-pre {
+:root {
+    --zero: #000000;
+    --one: #aa0000;
+    --two: #00aa00;
+    --three: #aa5500;
+    --four: #0000aa;
+    --five: #aa00aa;
+    --six: #00aaaa;
+    --seven: #aaaaaa;
+    --eight: #000000;
+    --nine: #ff5555;
+    --ten: #55ff55;
+    --eleven: #ffff55;
+    --twelve: #5555ff;
+    --thirteen: #ff55ff;
+    --fourteen: #55ffff;
+    --fifteen: #ffffff;
+}
+
+pre #terminal {
     color: #0d6efd;
-    background-color: #a9abac;
+    background-color: #e0e0e0;
+    font-family: Menlo, Monaco, Consolas, ui-monospace;
+    font-size: 13pt
+}
+
+pre cursor {
+    color: #0d6efd;
+    background-color: #ffff55;
     font-family: Menlo, Monaco, Consolas, ui-monospace;
     font-size: 13pt
 }

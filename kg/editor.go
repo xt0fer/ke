@@ -29,6 +29,7 @@ const (
 	idBlockComment = 6
 	idDoubleString = 7
 	idSingleString = 8
+	initialText    = "1 foo bar baz\n2 foo baz kristofer\n3 hello there.\n1234567890123456789012345678901234567890\n"
 )
 
 // Editor struct
@@ -85,7 +86,7 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 	//editor.msg("NO file to open, creating scratch buffer")
 	e.CurrentBuffer = e.FindBuffer("*scratch*", true)
 	e.CurrentBuffer.Buffername = "*scratch*"
-	e.CurrentBuffer.setText("1 foo bar baz\n2 foo baz kristofer\n3 hello there.\n1234567890123456789012345678901234567890\n")
+	e.CurrentBuffer.setText(initialText)
 	//editor.top()
 
 	e.CurrentWindow = NewWindow(e)
@@ -244,7 +245,7 @@ func (e *Editor) displayMsg() {
 // Display draws the window, minding the buffer pagestart/pageend
 func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 	e.Term.Blank()
-//	e.Term.SetCursor(0, 0)
+	//	e.Term.SetCursor(0, 0)
 	bp := wp.Buffer
 	pt := bp.Point
 	// /* find start of screen, handle scroll up off page or top of file  */
@@ -293,6 +294,8 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 				if rch != '\n' {
 					e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 					c++
+				} else {
+					log.Println("found a newline,", r)
 				}
 			} else {
 				e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
@@ -301,7 +304,7 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 		}
 
 		if rch == '\n' || e.Cols <= c {
-			log.Println("displaying NewLine", c, r)
+			//log.Println("displaying NewLine", c, r)
 			e.blankFrom(r, c)
 			c -= e.Cols
 			if c < 0 {
@@ -325,15 +328,23 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 }
 
 func (e *Editor) blankFrom(r, c int) { // blank line to end of term
-	for k := c; k < (e.Cols - 1); k++ {
-		e.Term.SetCell(k, r, '~', e.FGColor, term.ColorDefault)
+	// hmm. deep bug? why e.cols -1 ??
+	ch := '~'
+	for k := c; k < e.Cols; k++ {
+		if k == 0 {
+			ch = '^'
+		}
+		if k == e.Cols-1 {
+			ch = '$'
+		}
+		e.Term.SetCell(k, r, ch, e.FGColor, term.ColorDefault)
 	}
 }
 func (e *Editor) setTermCursor(c, r int) {
+	log.Printf("editor setTermCursor %d, %d\n", c, r)
 	wp := e.CurrentWindow
 	wp.Col, wp.Row = c, r
 	e.Term.SetCursor(c, r)
-	//// log.Printf("c %d r %d\n", c, r)
 }
 
 func (e *Editor) UpdateDisplay() {

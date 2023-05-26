@@ -34,6 +34,13 @@ func CURHIDE() string {
 	return (fmt.Sprintf("%s?25l", CSI))
 }
 
+func DECSET(n int) string {
+	return (fmt.Sprintf("%s?%dh", CSI, n))
+}
+func DECRESET(n int) string {
+	return (fmt.Sprintf("%s?%dl", CSI, n))
+}
+
 // CUU - Cursor Up
 func CUU(n int) string {
 	return (fmt.Sprintf("%s%dA", CSI, n))

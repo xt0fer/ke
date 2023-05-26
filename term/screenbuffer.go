@@ -1,6 +1,7 @@
 package term
 
 import (
+	"fmt"
 	"log"
 	"unicode/utf8"
 )
@@ -64,12 +65,21 @@ func (scr *Screen) Get(c, r int) rune {
 }
 
 func (scr *Screen) String() string {
-	s := ""
+	s := "  |"
+	for c := 0; c < scr.Cols; c++ {
+		if c%10 != 0 {
+			s += "-"
+		} else {
+			s += "+"
+		}
+	}
+	s += "|\n"
 	for r := 0; r < scr.Rows; r++ {
+		s += fmt.Sprintf("%2d|", r)
 		for c := 0; c < scr.Cols; c++ {
 			s += string(scr.Get(c, r))
 		}
-		s += "\n"
+		s += "|\n"
 	}
 	return s
 }

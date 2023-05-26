@@ -54,7 +54,7 @@ func NewTerm(kind TermType) *Term {
 	}
 
 	if kind == Web {
-		t.ScrBuf = NewScreen(40, 12) // termsize cols, rows
+		t.ScrBuf = NewScreen(80, 24) // termsize cols, rows
 	}
 
 	return t
@@ -69,22 +69,6 @@ func (t *Term) Cleanup() {
 		SetTermios(os.Stdin.Fd(), t.Origin)
 	}
 }
-
-// func (t *Term) Truncate() {
-// 	t.Contents.Reset()
-// }
-
-// func (t *Term) AppendBytes(buf []byte) {
-// 	t.Contents.Write(buf)
-// }
-
-// func (t *Term) Append(s string) {
-// 	t.Contents.Write([]byte(s))
-// }
-
-// func (t *Term) GetContents() []byte {
-// 	return []byte(t.Contents.String())
-// }
 
 func (t *Term) PollEvent() Event {
 	ru, _, err := t.Input.ReadRune()
@@ -105,12 +89,12 @@ func (t *Term) EventFromKey(key []byte) Event {
 		log.Println("error on recv", ru)
 	}
 	e := Event{}
-	if Key(ru) >= KeyCtrlTilde && Key(ru) <= KeySpace {
+	if (Key(ru) >= KeyCtrlTilde && Key(ru) <= KeySpace) ||
+		Key(ru) >= KeyHome && Key(ru) <= KeyArrowRight {
 		e.Type = EventKey
 		e.Key = Key(ru)
 		e.Ch = 0
 		log.Println(e.String())
-
 	} else {
 		e.Type = EventKey
 		e.Ch = ru
@@ -141,14 +125,45 @@ func (t *Term) Blank() {
 func (t *Term) Flush() {
 
 	if t.IsWeb() {
+		log.Printf("\nOnFlush***\n%s***\n", t.ScrBuf.String())
+		//t.Write([]byte(DECSET(1048)))
 		t.Write([]byte(ED(2)))
-		t.Write([]byte(CUP(0, 0)))
+		//t.Write([]byte(CUP(0, 0)))
 		msgType := 1
 		msg := t.ScrBuf.GetBytes()
 		if err := t.Conn.WriteMessage(msgType, msg); err != nil {
 			log.Println("unable to write message to frontend")
 			return
 		}
+		//t.Write([]byte(DECRESET(1048)))
 	}
 
+}
+
+func (t *Term) Clear() {
+	// //termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	// if t.IsPty() {
+	// 	t.Output.Write([]byte(ED(2)))
+	// }
+	// if t.IsWeb() {
+	// 	t.Write([]byte(ED(2)))
+	// }
+}
+
+func (t *Term) Size() (int, int) {
+	return 80, 24 // termsize cols, rows;
+}
+
+func (t *Term) SetCell(c, r int, ch rune, fg, bg Attribute) {
+	// switch zero-based to one-based?
+	t.ScrBuf.Set(c, r, ch)
+}
+func (t *Term) SetCursor(c int, r int) {
+	log.Println("term.SetCursor", c, r)
+	// switch zero-based to one-based?
+	t.CurCol = c
+	t.CurRow = r
+	if t.IsWeb() {
+		t.Write([]byte(CUP(t.CurCol, t.CurRow)))
+	}
 }
