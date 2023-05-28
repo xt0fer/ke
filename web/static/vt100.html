@@ -33,10 +33,14 @@
                 // if (event.key != "Control") {
                 //     socket.send(gets);
                 // }
-                ch = VT100.handle_event_(event);
-                console.log(">ev", event)
-                socket.send(ch);
-                console.log(">sending", ch)
+                if (event.keyCode === 17 || event.KeyCode === 18) {
+                    console.log(">ev control or alt", event)
+                } else {
+                    ch = VT100.handle_event_(event);
+                    console.log(">ev", event)
+                    socket.send(ch);
+                    console.log(">sending", ch)
+                }
             });
         };
         socket.onmessage = function(e) {

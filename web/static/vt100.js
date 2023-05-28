@@ -242,16 +242,15 @@ VT100.handle_event_ = function VT100_handle_event(event) {
     } else {
         ch = event.keyCode;
         // CONTROL KEYS NO WORKEY.
-        console.log("ch: " + ch + "\n");
-        console.log("ctrl?: " + event.ctrlKey + "\n");
+        console.log("ctrl?: " + event.ctrlKey);
         console.log("onkeypress:: keyCode: " + event.keyCode + ", ch: " + event.key);
+
         if (ch) {
             if (ch > 255)
                 return ch;
-            if (event.ctrlKey) {
+            if (event.ctrlKey && !event.shiftKey) {
                 ch = String.fromCharCode(ch - 64);
-            }
-            if (!event.shiftKey) {
+            } else if (!event.shiftKey) {
                 ch = String.fromCharCode(ch + 32);
             } else {
                 ch = String.fromCharCode(ch);
