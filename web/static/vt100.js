@@ -84,12 +84,12 @@ function VT100(wd, ht, scr_id) {
     this.scrolled_ = 0;
     this.bkgd_ = {
         mode: VT100.A_NORMAL,
-        fg: VT100.COLOR_WHITE,
+        fg: VT100.COLOR_YELLOW,
         bg: VT100.COLOR_BLACK
     };
     this.c_attr_ = {
         mode: VT100.A_NORMAL,
-        fg: VT100.COLOR_WHITE,
+        fg: VT100.COLOR_YELLOW,
         bg: VT100.COLOR_BLACK
     };
     this.text_ = new Array(ht);
@@ -100,6 +100,8 @@ function VT100(wd, ht, scr_id) {
     }
     this.scr_ = scr;
     this.cursor_vis_ = true;
+    this.cursor_col = 0;
+    this.cursor_row = 0;
     this.grab_events_ = false;
     this.getch_isr_ = undefined;
     this.key_buf_ = [];
@@ -145,199 +147,98 @@ VT100.the_vt_ = undefined;
 
 // class methods
 
-// this is actually an event handler
-VT100.handle_onkeypress_ = function VT100_handle_onkeypress(event) {
-    var vt = VT100.the_vt_,
-        ch;
-    if (vt === undefined)
-        return true;
-    if (VT100.browser_ie_ || VT100.browser_opera_) {
-        ch = event.keyCode;
-        if (ch == 13)
-            ch = 10;
-        else if (ch > 255 || (ch < 32 && ch != 8))
-            return true;
-        ch = String.fromCharCode(ch);
-    } else {
-        ch = event.charCode;
-        //dump("ch: " + ch + "\n");
-        //dump("ctrl?: " + event.ctrlKey + "\n");
-        vt.debug("onkeypress:: keyCode: " + event.keyCode + ", ch: " + event.charCode);
-        if (ch) {
-            if (ch > 255)
-                return true;
-            if (event.ctrlKey && event.shiftKey) {
-                // Don't send the copy/paste commands.
-                var charStr = String.fromCharCode(ch);
-                if (charStr == 'C' || charStr == 'V') {
-                    return false;
-                }
-            }
-            if (event.ctrlKey) {
-                ch = String.fromCharCode(ch - 96);
-            } else {
-                ch = String.fromCharCode(ch);
-                if (ch == '\r')
-                    ch = '\n';
-            }
-        } else {
-            switch (event.keyCode) {
-                case event.DOM_VK_BACK_SPACE:
-                    ch = '\b';
-                    break;
-                case event.DOM_VK_TAB:
-                    ch = '\t';
-                    // Stop tab from moving to another element.
-                    event.preventDefault();
-                    break;
-                case event.DOM_VK_RETURN:
-                case event.DOM_VK_ENTER:
-                    ch = '\n';
-                    break;
-                case event.DOM_VK_UP:
-                    ch = '\x1b[A';
-                    break;
-                case event.DOM_VK_DOWN:
-                    ch = '\x1b[B';
-                    break;
-                case event.DOM_VK_RIGHT:
-                    ch = '\x1b[C';
-                    break;
-                case event.DOM_VK_LEFT:
-                    ch = '\x1b[D';
-                    break;
-                case event.DOM_VK_DELETE:
-                    ch = '\x1b[3~';
-                    break;
-                case event.DOM_VK_HOME:
-                    ch = '\x1b[H';
-                    break;
-                case event.DOM_VK_ESCAPE:
-                    ch = '\x1bc';
-                    break;
-                default:
-                    return true;
-            }
+// ***
+// ***
+// ***
+// ***
+// ***
+VT100.InputString = function(e) {
+    if (e.ctrlKey) {
+        let kk = (e.key).charCodeAt();
+        if (e.ctrlKey && (kk >= 65 && kk <= 90)) {
+            return String.fromCharCode(e.key - 64);
+        }
+        if (e.ctrlKey && (kk >= 97 && kk <= 122)) {
+            return String.fromCharCode(kk - 96);
+        }
+
+        switch (e.key) {
+            case $.Key2:
+                return "\x00";
+            case $.Key3:
+            case $.LeftBracket:
+                return "\x1b";
+            case $.Key4:
+                return "\x1c";
+            case $.KeyRightBracket:
+            case $.Key5:
+                return "\x1d";
+            case $.Key6:
+                return "\x1e";
+            case $.Key7:
+                return "\x1f";
+            case $.Key8:
+                return "\x7f";
         }
     }
-    vt.key_buf_.push(ch);
-    //setTimeout(VT100.go_getch_, 0);
-    return false;
-}
 
-
-// this is actually an event handler
-VT100.handle_event_ = function VT100_handle_event(event) {
-    var vt = VT100.the_vt_,
-        ch;
-    if (vt === undefined)
-        return '';
-    if (VT100.browser_ie_ || VT100.browser_opera_) {
-        ch = event.keyCode;
-        if (ch == 13)
-            ch = 10;
-        else if (ch > 255 || (ch < 32 && ch != 8))
-            return '~';
-        ch = String.fromCharCode(ch);
-    } else {
-        ch = event.keyCode;
-        // CONTROL KEYS NO WORKEY.
-        console.log("ctrl?: " + event.ctrlKey);
-        console.log("onkeypress:: keyCode: " + event.keyCode + ", ch: " + event.key);
-
-        if (ch) {
-            if (ch > 255)
-                return ch;
-            if (event.ctrlKey && !event.shiftKey) {
-                ch = String.fromCharCode(ch - 64);
-            } else if (!event.shiftKey) {
-                ch = String.fromCharCode(ch + 32);
-            } else {
-                ch = String.fromCharCode(ch);
-                if (ch == '\r')
-                    ch = '\n';
-            }
-        } else {
-            switch (event.keyCode) {
-                case event.DOM_VK_BACK_SPACE:
-                    ch = '\b';
-                    break;
-                case event.DOM_VK_TAB:
-                    ch = '\t';
-                    // Stop tab from moving to another element.
-                    event.preventDefault();
-                    break;
-                case event.DOM_VK_RETURN:
-                case event.DOM_VK_ENTER:
-                    ch = '\n';
-                    break;
-                case event.DOM_VK_UP:
-                    ch = '\x1b[A';
-                    break;
-                case event.DOM_VK_DOWN:
-                    ch = '\x1b[B';
-                    break;
-                case event.DOM_VK_RIGHT:
-                    ch = '\x1b[C';
-                    break;
-                case event.DOM_VK_LEFT:
-                    ch = '\x1b[D';
-                    break;
-                case event.DOM_VK_DELETE:
-                    ch = '\x1b[3~';
-                    break;
-                case event.DOM_VK_HOME:
-                    ch = '\x1b[H';
-                    break;
-                case event.DOM_VK_ESCAPE:
-                    ch = '\x1bc';
-                    break;
-                default:
-                    ch = event.key;
-            }
-        }
+    switch (e.key) {
+        case "Backspace":
+            return "\x08";
+        case "Tab":
+            return "\x09";
+        case "Escape":
+            return "\x1b";
+        case "PageUp":
+            return "\x1b[5~";
+        case "PageDown":
+            return "\x1b[6~";
+        case "End":
+            return "\x1b[4~";
+        case "Home":
+            return "\x1b[1~";
+        case "LeftArrow":
+            return "\x1b[D";
+        case "UpArrow":
+            return "\x1b[A";
+        case "RightArrow":
+            return "\x1b[C";
+        case "DownArrow":
+            return "\x1b[B";
+        case "Delete":
+            return "\x7f";
+        case "Enter":
+            return "\x0a";
+        case "Space":
+            return " ";
+            // case "F1:
+            //     return "\x1b[11~";
+            // case $.F2:
+            //     return "\x1b[12~";
+            // case $.F3:
+            //     return "\x1b[13~";
+            // case $.F4:
+            //     return "\x1b[14~";
+            // case $.F5:
+            //     return "\x1b[15~";
+            // case $.F6:
+            //     return "\x1b[17~";
+            // case $.F7:
+            //     return "\x1b[18~";
+            // case $.F8:
+            //     return "\x1b[19~";
+            // case $.F9:
+            //     return "\x1b[20~";
+            // case $.F10:
+            //     return "\x1b[21~";
+            // case $.F11:
+            //     return "\x1b[23~";
+            // case $.F12:
+            //     return "\x1b[24~";
     }
-    //vt.key_buf_.push(ch);
-    //setTimeout(VT100.go_getch_, 0);
-    return ch;
-}
 
-// this is actually an event handler
-VT100.handle_onkeydown_ = function VT100_handle_onkeydown() {
-    var vt = VT100.the_vt_,
-        ch;
-    switch (event.keyCode) {
-        case 8:
-            ch = '\b';
-            break;
-        default:
-            return true;
-    }
-    vt.key_buf_.push(ch);
-    setTimeout(VT100.go_getch_, 0);
-    return false;
-}
-
-VT100.go_getch_ = function VT100_go_getch() {
-    var vt = VT100.the_vt_;
-    console.log(">go_getch_1", vt)
-    if (vt === undefined)
-        return;
-    var isr = vt.getch_isr_;
-    console.log(">go_getch_2", isr)
-    vt.getch_isr_ = undefined;
-    if (isr === undefined)
-        return;
-    var ch = vt.key_buf_.shift();
-    console.log("go_getch_3 ch", ch)
-
-    if (ch === undefined) {
-        vt.getch_isr_ = isr;
-        return;
-    }
-    if (vt.echo_)
-        vt.addch(ch);
-    isr(ch, vt);
+    //console.log("default " + e.key)
+    return e.key; //e.chr;
 }
 
 // object methods
@@ -393,7 +294,7 @@ VT100.prototype.html_colours_ = function(attr) {
         f: '#' + (fg & 4 ? co1 : co0) +
             (fg & 2 ? co1 : co0) +
             (fg & 1 ? co1 : co0),
-        b: '#' + (bg & 4 ? co1 : co0) +
+        b: '        #' + (bg & 4 ? co1 : co0) +
             (bg & 2 ? co1 : co0) +
             (bg & 1 ? co1 : co0)
     };
@@ -429,6 +330,7 @@ VT100.prototype.addch = function(ch, attr) {
             if (attr === undefined)
                 attr = this._cloneAttr(this.c_attr_);
             if (cc >= this.wd_) {
+                //console.log("3 incr this.row_");
                 ++this.row_;
                 cc = 0;
             }
@@ -533,33 +435,6 @@ VT100.prototype.clearpos = function(row, col) {
     this.attr_[row][col] = this.bkgd_;
 }
 
-VT100.prototype.curs_set = function(vis, grab, eventist) {
-    this.debug("curs_set:: vis: " + vis + ", grab: " + grab);
-    // console.log("curs_set:: vis: " + vis + ", grab: " + grab);
-    if (vis !== undefined)
-        this.cursor_vis_ = (vis > 0);
-    if (eventist === undefined)
-        eventist = window;
-    if (grab === true || grab === false) {
-        if (grab === this.grab_events_)
-            return;
-        if (grab) {
-            this.grab_events_ = true;
-            VT100.the_vt_ = this;
-            eventist.addEventListener("keypress", VT100.handle_onkeypress_, false);
-
-            if (VT100.browser_ie_)
-                document.onkeydown = VT100.handle_onkeydown_;
-        } else {
-            eventist.removeEventListener("keypress", VT100.handle_onkeypress_, false);
-            if (VT100.browser_ie_)
-                document.onkeydown = VT100.handle_onkeydown_;
-            this.grab_events_ = false;
-            VT100.the_vt_ = undefined;
-        }
-    }
-}
-
 VT100.prototype.echo = function() {
     this.debug("echo on");
     this.echo_ = true;
@@ -567,12 +442,12 @@ VT100.prototype.echo = function() {
 
 VT100.prototype.erase = VT100.prototype.clear;
 
-VT100.prototype.getch = function(isr) {
-    this.debug("getch");
-    this.refresh();
-    this.getch_isr_ = isr;
-    setTimeout(VT100.go_getch_, 0);
-}
+// VT100.prototype.getch = function(isr) {
+//     this.debug("getch");
+//     this.refresh();
+//     this.getch_isr_ = isr;
+//     setTimeout(VT100.go_getch_, 0);
+// }
 
 VT100.prototype.getmaxyx = function() {
     return { y: this.ht_ - 1, x: this.wd_ - 1 };
@@ -583,7 +458,6 @@ VT100.prototype.getyx = function() {
 }
 
 VT100.prototype.move = function(r, c) {
-    this.debug("move: (" + r + ", " + c + ")");
     if (r < 0)
         r = 0;
     else if (r >= this.ht_)
@@ -594,6 +468,9 @@ VT100.prototype.move = function(r, c) {
         c = this.wd_ - 1;
     this.row_ = r;
     this.col_ = c;
+    this.cursor_col = c;
+    this.cursor_row = r;
+    //console.log("move cursor: 2 (" + r + ", " + c + ")");
 }
 
 VT100.prototype.noecho = function() {
@@ -611,8 +488,11 @@ VT100.prototype.refresh = function() {
         pair, cr, cc, ht, wd, cv, added_end_tag;
     ht = this.ht_;
     wd = this.wd_;
-    cr = this.row_;
-    cc = this.col_;
+    // cr = this.row_;
+    // cc = this.col_;
+    cr = this.cursor_row;
+    cc = this.cursor_col;
+    //console.log("(c,r) ", cc, cr);
     cv = this.cursor_vis_;
     var innerHTML = this.scr_.innerHTML;
     if (cc >= wd)
@@ -636,10 +516,10 @@ VT100.prototype.refresh = function() {
                 }
                 start_tag = "";
                 end_tag = "";
-                if (n_at.mode & VT100.A_BLINK) {
-                    start_tag = "<blink>";
-                    end_tag = "</blink>" + end_tag;
-                }
+                // if (n_at.mode & VT100.A_BLINK) {
+                //     start_tag = "<blink>";
+                //     end_tag = "</blink>" + end_tag;
+                // }
                 if (n_at.mode & VT100.A_STANDOUT)
                     n_at.mode |= VT100.A_BOLD;
                 pair = this.html_colours_(n_at);
@@ -652,7 +532,8 @@ VT100.prototype.refresh = function() {
                 end_tag = "</span>" + end_tag;
                 at = n_at;
                 added_end_tag = true;
-            } else if (c == 0) {
+            } else
+            if (c == 0) {
                 stuff += start_tag;
             }
             ch = this.text_[r][c];
@@ -795,6 +676,7 @@ VT100.prototype.write = function(stuff) {
                     case 'H':
                         /* Move to (0,0). */
                         this.esc_state_ = 0;
+                        //console.log("set cursor home");
                         this.move(0, 0);
                         continue;
                     case 'J':
@@ -861,9 +743,10 @@ VT100.prototype.write = function(stuff) {
                     case 'f':
                     case 'H':
                         // Cursor Home 		<ESC>[{ROW};{COLUMN}H
+                        //console.log("set cursor position");
                         this.csi_parms_.push(0);
-                        this.move(this.csi_parms_[0] - 1,
-                            this.csi_parms_[1] - 1);
+                        this.move(this.csi_parms_[0],
+                            this.csi_parms_[1]);
                         break;
                     case 'J':
                         switch (this.csi_parms_[0]) {

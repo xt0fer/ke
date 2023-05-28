@@ -73,8 +73,6 @@ func (e *Editor) HandleEvent(event term.Event) bool {
 }
 
 func (e *Editor) UpdateTerminal() {
-	e.Term.Write([]byte(term.CUP(0, 0)))
-	e.Term.Write([]byte(term.ED(term.EraseToEnd)))
 	s := e.CurrentScreen()
 	e.Term.Write([]byte(s))
 }
@@ -84,10 +82,11 @@ func (e *Editor) CurrentScreen() string {
 }
 
 func (editor *Editor) DisplayContents(s string) []byte {
-	msg := []byte(term.CUP(0, 0))
-	msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
-	//s := editor.RootBuffer.T.AllContents()
-	msg = append(msg, []byte(s)...)
+	msg := []byte(s)
+	// msg := []byte(term.CUP(0, 0))
+	// msg = append(msg, []byte(term.ED(term.EraseToEnd))...)
+	// //s := editor.RootBuffer.T.AllContents()
+	// msg = append(msg, []byte(s)...)
 	//log.Println("sizeof display is ", len(msg))
 	return msg
 }

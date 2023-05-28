@@ -9,43 +9,36 @@
 </head>
 
 <body>
-    <div class="border border-warning">
-        <pre id="terminal"></pre>
+    <div class="row">
+        <div class="left">&nbsp;</div>
+        <div class="middle">
+            <pre id="terminal"></pre>
+        </div>
+        <div class="right">&nbsp;</div>
     </div>
     <script>
         let socket = new WebSocket("ws://localhost:8005/editor");
-        //let term = new jsvt.Terminal();
-        let vt100 = new VT100(80, 25, "terminal")
-        vt100.clear();
-        vt100.refresh();
-
-        let isr = function(ch, vt) {
-            console.log(">ch", ch)
-            socket.send(ch);
-        };
-        vt100.getch(isr);
-        vt100.curs_set(true, false);
-        VT100.the_vt_ = vt100
+        let vt100 = new VT100(80, 24, "terminal")
+            // vt100.clear();
+            // vt100.refresh();
 
         socket.onopen = function() {
-            $(window).on("keydown", function(event) {
-                // let gets = term.InputString(event);
-                // if (event.key != "Control") {
-                //     socket.send(gets);
-                // }
+            $(window).on("keypress", function(event) {
                 if (event.keyCode === 17 || event.KeyCode === 18) {
+                    // filter out control and alt naked events
                     console.log(">ev control or alt", event)
                 } else {
-                    ch = VT100.handle_event_(event);
-                    console.log(">ev", event)
+                    ch = VT100.InputString(event);
+                    //console.log(">ev", event)
                     socket.send(ch);
-                    console.log(">sending", ch)
+                    //console.log(">sending", ch)
                 }
             });
         };
         socket.onmessage = function(e) {
+            vt100.clear();
             vt100.write(e.data);
-            //$("#terminal").append(vt100.display);
+            //vt100.refresh();
         };
     </script>
 </body>

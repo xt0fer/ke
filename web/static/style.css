@@ -1,3 +1,46 @@
+.column {
+    float: left;
+}
+
+.left,
+.right {
+    width: 15%;
+}
+
+.middle {
+    width: 70%;
+}
+
+
+/* Clear floats after the columns */
+
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+pre {
+    padding: 0;
+    margin: 0;
+}
+
+pre,
+#terminal {
+    color: #0d6efd;
+    background-color: #e0e0e0;
+    font-family: Menlo, Monaco, Consolas, ui-monospace;
+    font-size: 13pt
+}
+
+pre,
+cursor {
+    color: #0d6efd;
+    background-color: #ffff55;
+    font-family: Menlo, Monaco, Consolas, ui-monospace;
+    font-size: 13pt
+}
+
 :root {
     --zero: #000000;
     --one: #aa0000;
@@ -15,18 +58,4 @@
     --thirteen: #ff55ff;
     --fourteen: #55ffff;
     --fifteen: #ffffff;
-}
-
-pre #terminal {
-    color: #0d6efd;
-    background-color: #e0e0e0;
-    font-family: Menlo, Monaco, Consolas, ui-monospace;
-    font-size: 13pt
-}
-
-pre cursor {
-    color: #0d6efd;
-    background-color: #ffff55;
-    font-family: Menlo, Monaco, Consolas, ui-monospace;
-    font-size: 13pt
 }

@@ -109,7 +109,7 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 			log.Println("unable to get message from frontend")
 			return
 		}
-		log.Printf("ev: |%x| |%s| \n", msg, string(msg))
+		//log.Printf("ev: |%x| |%s| \n", msg, string(msg))
 
 		event := e.Term.EventFromKey(msg)
 
@@ -204,7 +204,7 @@ func (e *Editor) RunKeymapFunction(ev *term.Event) bool {
 	}
 	for i, j := range e.Keymap {
 		if strings.Compare(lookfor, j.KeyBytes) == 0 {
-			log.Println("SearchAndPerform FOUND ", lookfor, e.Keymap[i])
+			//log.Println("SearchAndPerform FOUND ", lookfor, e.Keymap[i])
 			do := e.Keymap[i].Do
 			if do != nil {
 				do(e) // execute function for key
@@ -295,7 +295,7 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 					e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
 					c++
 				} else {
-					log.Println("found a newline,", r)
+					//log.Println("found a newline,", r)
 				}
 			} else {
 				e.Term.SetCell(c, r, rch, e.FGColor, term.ColorDefault)
@@ -329,8 +329,9 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 
 func (e *Editor) blankFrom(r, c int) { // blank line to end of term
 	// hmm. deep bug? why e.cols -1 ??
-	ch := '~'
+	ch := ' '
 	for k := c; k < e.Cols; k++ {
+		ch = '~'
 		if k == 0 {
 			ch = '^'
 		}
@@ -341,7 +342,7 @@ func (e *Editor) blankFrom(r, c int) { // blank line to end of term
 	}
 }
 func (e *Editor) setTermCursor(c, r int) {
-	log.Printf("editor setTermCursor %d, %d\n", c, r)
+	//log.Printf("editor setTermCursor %d, %d\n", c, r)
 	wp := e.CurrentWindow
 	wp.Col, wp.Row = c, r
 	e.Term.SetCursor(c, r)
