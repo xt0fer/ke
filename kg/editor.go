@@ -77,6 +77,8 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 	//checkErr(err)
 	// defer termbox.Close()
 	// e.Cols, e.Lines = termbox.Size()
+
+	e.InputChan = make(chan term.Event, 20)
 	e.Term = term.NewTerm(term.Web)
 
 	e.Term.Kind = term.Web
@@ -103,26 +105,41 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 	e.UpdateDisplay()
 	e.Term.Flush()
 
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("unable to get message from frontend")
-			return
+	go func() {
+		log.Println("starting event handle loop")
+		for {
+			event := <-e.InputChan
+			log.Println("DEqueue event ", event.String())
+			ok := e.HandleEvent(&event)
+			if !ok {
+				conn.Close()
+				break //exit editor
+			}
+
+			e.UpdateDisplay()
+
+			e.Term.Flush()
 		}
-		//log.Printf("ev: |%x| |%s| \n", msg, string(msg))
+		log.Println("ending event handle loop")
+	}()
+	go func() {
+		log.Println("starting input loop")
+		for {
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("unable to get message from frontend")
+				return
+			}
+			//log.Printf("ev: |%x| |%s| \n", msg, string(msg))
 
-		event := e.Term.EventFromKey(msg)
+			event := e.Term.EventFromKey(msg)
+			log.Println("queue event ", event.String())
 
-		ok := e.HandleEvent(&event)
-		if !ok {
-			conn.Close()
-			break //exit editor
+			e.InputChan <- event
 		}
+		log.Println("ending input loop")
+	}()
 
-		e.UpdateDisplay()
-
-		e.Term.Flush()
-	}
 }
 
 // handleEvent
@@ -165,6 +182,7 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 
 // OnSysKey on Ctrl key pressed
 func (e *Editor) OnSysKey(ev *term.Event) bool {
+	log.Println("OnSysKey", ev.Key)
 	switch ev.Key {
 	case term.KeyCtrlX:
 		log.Println("C-X")
@@ -451,7 +469,7 @@ func (e *Editor) displayPromptAndResponse(prompt string, response string) {
 	}
 	e.blankFrom(e.Lines-1, len(prompt)+len(response))
 	e.Term.SetCursor(len(prompt)+len(response), e.Lines-1)
-	// term.Flush()
+	e.Term.Flush()
 }
 
 func (e *Editor) GetInput(prompt string) string {

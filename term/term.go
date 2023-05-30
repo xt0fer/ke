@@ -35,6 +35,8 @@ type Term struct {
 	CurRow   int
 }
 
+// this `term` imeplmentation only really does teh Web type.
+// the Pty type of term has not been finished or tested.
 func NewTerm(kind TermType) *Term {
 	t := &Term{}
 	t.Kind = kind

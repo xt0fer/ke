@@ -18,13 +18,14 @@ I came across an article about the simple mechanisms inside a PieceTable, and so
 ### The Web Frontend
 
 IN the last ZCW cohort, I wanted a very simple web frontend demo to show how to use `websockets` in front of a _normal_ program (in this case a text editor).
-The _protocol_ between front end and back end in this case is just keyboard input coming into the editor and after each key, a re-display of the `CurrentScreen` (the contents of the editor which show within the HTML terminal element oin the browser).
+The _protocol_ between front end and back end in this case is just keyboard input coming into the editor and after each key, a re-display of the `CurrentScreen` (the contents of the editor which show within the HTML terminal element in the browser).
+The current screen  is basically a padded string of rows-by-columns which represents the terminal screen.
+The terminal is a basic `vt100` (well, a lite version)
 
 ## Editor Machinery
 
 Going to integrate the contents of `github.com/ke/kg`
 
-- add in `kg` code
-- wire up to `web/server`
+- add in `kg` code - done
+- wire up to `web/server` - done
 - integrate new `buffer/buffer`
-

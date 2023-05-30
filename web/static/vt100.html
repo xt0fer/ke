@@ -29,9 +29,9 @@
                     console.log(">ev control or alt", event)
                 } else {
                     ch = VT100.InputString(event);
-                    //console.log(">ev", event)
+                    console.log(">ev", event)
                     socket.send(ch);
-                    //console.log(">sending", ch)
+                    console.log(">sending", ch)
                 }
             });
         };

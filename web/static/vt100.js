@@ -3,7 +3,8 @@
 // implemented on top of the ncurses-like calls, not the other way round.)
 //
 // Released under the GNU LGPL v2.1, by Frank Bi <bi@zompower.tk>
-//
+//Added to by Kristofer Younger <kris atz zipcodewilmington dot com>
+// 2023-06-01 - upgraded to osrta latest JS
 // 2007-08-12	- refresh():
 //		  - factor out colour code to html_colours_()
 //		  - fix handling of A_REVERSE | A_DIM
@@ -140,8 +141,6 @@ VT100.ATTR_FLAGS_ = VT100.A_UNDERLINE | VT100.A_REVERSE | VT100.A_BLINK |
     VT100.A_DIM | VT100.A_BOLD | VT100.A_STANDOUT |
     VT100.A_PROTECT | VT100.A_INVIS;
 VT100.COLOR_SHIFT_ = 6;
-VT100.browser_ie_ = (navigator.appName.indexOf("Microsoft") != -1);
-VT100.browser_opera_ = (navigator.appName.indexOf("Opera") != -1);
 // class variables
 VT100.the_vt_ = undefined;
 
@@ -150,7 +149,7 @@ VT100.the_vt_ = undefined;
 // ***
 // ***
 // ***
-// ***
+// *** Translate Browser Events into vt100 terminal characters
 // ***
 VT100.InputString = function(e) {
     if (e.ctrlKey) {
@@ -517,8 +516,8 @@ VT100.prototype.refresh = function() {
                 start_tag = "";
                 end_tag = "";
                 // if (n_at.mode & VT100.A_BLINK) {
-                //     start_tag = "<blink>";
-                //     end_tag = "</blink>" + end_tag;
+                //     start_tag = "<blink>"; // blink tags considered harmful.
+                //     end_tag = "</blink>" + end_tag; // and deprecated as well.
                 // }
                 if (n_at.mode & VT100.A_STANDOUT)
                     n_at.mode |= VT100.A_BOLD;
