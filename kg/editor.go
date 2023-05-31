@@ -3,7 +3,9 @@ package kg
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
+	"syscall"
 	"unicode"
 
 	"github.com/gorilla/websocket"
@@ -59,7 +61,8 @@ type Editor struct {
 }
 
 // StartEditor is the old C main function
-func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
+func (e *Editor) StartEditor(argv []string, argc int,
+	conn *websocket.Conn, quit chan os.Signal) {
 	// log setup....
 	// f, err := os.OpenFile("logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	// if err != nil {
@@ -109,7 +112,9 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 		log.Println("starting event handle loop")
 		for {
 			event := <-e.InputChan
-			log.Println("DEqueue event ", event.String())
+			log.Println("DEqueue ", event.String())
+			log.Println("<- InputChan len ", len(e.InputChan))
+
 			ok := e.HandleEvent(&event)
 			if !ok {
 				conn.Close()
@@ -121,6 +126,7 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 			e.Term.Flush()
 		}
 		log.Println("ending event handle loop")
+		quit <- syscall.SIGINT
 	}()
 	go func() {
 		log.Println("starting input loop")
@@ -136,10 +142,12 @@ func (e *Editor) StartEditor(argv []string, argc int, conn *websocket.Conn) {
 			log.Println("queue event ", event.String())
 
 			e.InputChan <- event
+			log.Println("InputChan <- len ", len(e.InputChan))
 		}
 		log.Println("ending input loop")
 	}()
 
+	log.Println("ending StartEditor")
 }
 
 // handleEvent
@@ -148,12 +156,20 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 	switch ev.Type {
 	case term.EventKey:
 		if ev.Ch != 0 && (e.CtrlXFlag || e.EscapeFlag) {
-			_ = e.OnSysKey(ev)
+			ok := e.OnSysKey(ev)
+			if !ok {
+				log.Println("no command found. 1")
+				e.msg("no command found. 1")
+			}
 			if e.Done {
 				return false
 			}
 		} else if ev.Ch == 0 {
-			_ = e.OnSysKey(ev)
+			ok := e.OnSysKey(ev)
+			if !ok {
+				log.Println("no command found. 2")
+				e.msg("no command found. 2")
+			}
 			if e.Done {
 				return false
 			}
@@ -182,7 +198,7 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 
 // OnSysKey on Ctrl key pressed
 func (e *Editor) OnSysKey(ev *term.Event) bool {
-	log.Println("OnSysKey", ev.Key)
+	log.Println("OnSysKey", ev.Key, ev.Ch)
 	switch ev.Key {
 	case term.KeyCtrlX:
 		log.Println("C-X")
@@ -262,8 +278,6 @@ func (e *Editor) displayMsg() {
 
 // Display draws the window, minding the buffer pagestart/pageend
 func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
-	e.Term.Blank()
-	//	e.Term.SetCursor(0, 0)
 	bp := wp.Buffer
 	pt := bp.Point
 	// /* find start of screen, handle scroll up off page or top of file  */
@@ -341,7 +355,7 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 		e.displayMsg()
 		e.setTermCursor(wp.Col, wp.Row) //bp.PointCol, bp.PointRow)
 	}
-	//term.Flush() //refresh();
+	e.Term.Flush() //refresh();
 	wp.Updated = false
 }
 
@@ -372,7 +386,7 @@ func (e *Editor) UpdateDisplay() {
 	/* only one window */
 	if e.RootWindow.Next == nil {
 		e.Display(e.CurrentWindow, true)
-		//		term.Flush()
+		e.Term.Flush()
 		bp.PrevSize = bp.TextSize
 		return
 	}
@@ -462,7 +476,7 @@ func (e *Editor) ModeLine(wp *Window) {
 	}
 }
 
-func (e *Editor) displayPromptAndResponse(prompt string, response string) {
+func (e *Editor) DisplayMinibuffer(prompt string, response string) {
 	e.drawString(0, e.Lines-1, e.FGColor, term.ColorDefault, prompt)
 	if response != "" {
 		e.drawString(len(prompt), e.Lines-1, e.FGColor, term.ColorDefault, response)
@@ -472,14 +486,15 @@ func (e *Editor) displayPromptAndResponse(prompt string, response string) {
 	e.Term.Flush()
 }
 
-func (e *Editor) GetInput(prompt string) string {
+func (e *Editor) GetMinibufferInput(prompt string) string {
 	fname := ""
 	var ev term.Event
-	e.displayPromptAndResponse(prompt, "")
+	e.DisplayMinibuffer(prompt, "")
 	e.MiniBufActive = true
-loop:
-	for {
+	done := false
+	for !done {
 		ev = <-e.InputChan
+		log.Println("DEqueue minibuffer ", ev.String())
 		if ev.Ch != 0 {
 			ch := ev.Ch
 			fname = fname + string(ch)
@@ -490,8 +505,8 @@ loop:
 				fname = fname + string('\t')
 			case term.KeySpace:
 				fname = fname + string(' ')
-			case term.KeyEnter, term.KeyCtrlR:
-				break loop
+			case term.KeyEnter, term.KeyCtrlJ, term.KeyCtrlR:
+				done = true
 			case term.KeyBackspace2, term.KeyBackspace:
 				if len(fname) > 0 {
 					fname = fname[:len(fname)-1]
@@ -504,7 +519,7 @@ loop:
 
 			}
 		}
-		e.displayPromptAndResponse(prompt, fname)
+		e.DisplayMinibuffer(prompt, fname)
 	}
 	e.MiniBufActive = false
 	return fname

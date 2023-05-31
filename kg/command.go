@@ -60,7 +60,7 @@ func (e *Editor) quitAsk() {
 
 /* flag = default answer, FALSE=n, TRUE=y */
 func (e *Editor) yesno(flag bool, prompt string) bool {
-	e.displayPromptAndResponse(prompt, "")
+	e.DisplayMinibuffer(prompt, "")
 	e.MiniBufActive = true
 	defer func() { e.MiniBufActive = false }()
 	ev := <-e.InputChan
@@ -75,8 +75,8 @@ func (e *Editor) yesno(flag bool, prompt string) bool {
 func (e *Editor) redraw() {
 	log.Println("redrawing...")
 	//termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	//e.Term.SetCursor(0, 0)
-	//e.Term.Clear()
+	e.Term.SetCursor(0, 0)
+	e.Term.Clear()
 	e.CurrentWindow.Updated = true
 	e.CurrentBuffer.Reframe = true
 	k := 0
@@ -132,7 +132,7 @@ func (e *Editor) delete() {
 }
 
 func (e *Editor) gotoline() {
-	fname := e.GetInput("Goto Line: ")
+	fname := e.GetMinibufferInput("Goto Line: ")
 	ln, err := strconv.Atoi(fname)
 	if err != nil {
 		e.msg("Invalid Line.")
@@ -141,7 +141,7 @@ func (e *Editor) gotoline() {
 }
 
 func (e *Editor) insertfile() {
-	fname := e.GetInput("Insert file: ")
+	fname := e.GetMinibufferInput("Insert file: ")
 	if fname != "" {
 		res := e.InsertFile(fname, true)
 		if res {
@@ -151,7 +151,7 @@ func (e *Editor) insertfile() {
 }
 
 func (e *Editor) readfile() {
-	fname := e.GetInput("Find file: ")
+	fname := e.GetMinibufferInput("Find file: ")
 	if fname == "" {
 		e.msg("Nope")
 		return
@@ -179,7 +179,7 @@ func (e *Editor) savebuffer() {
 }
 
 func (e *Editor) writefile() {
-	fname := e.GetInput("Write file: ")
+	fname := e.GetMinibufferInput("Write file: ")
 	if e.Save(fname) == true {
 		e.CurrentBuffer.Filename = fname
 	}

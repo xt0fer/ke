@@ -40,6 +40,12 @@
             vt100.write(e.data);
             //vt100.refresh();
         };
+        socket.onclose = function() {
+            vt100.clear();
+            // let empty = "\x1b\x5b2";
+            vt100.write(" Quit.");
+            vt100.refresh();
+        }
     </script>
 </body>
 

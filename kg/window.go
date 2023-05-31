@@ -55,24 +55,9 @@ func (wp *Window) WindowResize() {
 	wp.Editor.CurrentWindow.OneWindow()
 }
 
-// OnKey handles the insertion of non-control/editor keys
+// OnKey handles the buffer insertion of non-control/editor keys
 //
-//	func (wp *Window) OnKey(ev *termbox.Event) {
-//		switch ev.Key {
-//		case termbox.KeySpace:
-//			wp.Buffer.AddRune(' ')
-//		case termbox.KeyEnter, termbox.KeyCtrlJ:
-//			wp.Buffer.AddRune('\n')
-//		case termbox.KeyTab:
-//			wp.Buffer.AddRune('\t')
-//		default:
-//			if ev.Mod&termbox.ModAlt != 0 && wp.Editor.OnAltKey(ev) {
-//				// log.Println("Alt!", ev.Key, ev.Ch)
-//				break
-//			}
-//			wp.Buffer.AddRune(ev.Ch)
-//		}
-//	}
+
 func (wp *Window) OnKey(ev *term.Event) {
 	switch ev.Key {
 	case term.KeySpace:

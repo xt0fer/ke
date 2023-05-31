@@ -1,8 +1,14 @@
 package web
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/kristofer/ke/kg"
 
@@ -16,7 +22,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func kgEditor(w http.ResponseWriter, r *http.Request) {
+func (editor *EditorServer) kgEditor(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("running KG editor")
 
@@ -28,14 +34,34 @@ func kgEditor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		edit := &kg.Editor{}
-		edit.StartEditor([]string{}, 0, conn)
+		editor.Editor = &kg.Editor{}
+		editor.Editor.StartEditor([]string{}, 0, conn, editor.Quit)
+
+		//editor.Quit <- syscall.SIGINT
 	}()
+
+	log.Println("ending KG editor")
 
 }
 
-func EditorServer() {
-	http.HandleFunc("/editor", kgEditor)
+type EditorServer struct {
+	Server *http.Server
+	Editor *kg.Editor
+	Quit   chan os.Signal
+}
+
+func NewEditorServer() *EditorServer {
+	e := &EditorServer{}
+	e.Server = &http.Server{
+		Addr: ":8005",
+	}
+	e.Quit = make(chan os.Signal, 1)
+	return e
+}
+
+func (editor *EditorServer) StartEditorServer() {
+
+	http.HandleFunc("/editor", editor.kgEditor)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("serving main page")
@@ -51,7 +77,25 @@ func EditorServer() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	http.ListenAndServe(":8005", nil)
+	//http.ListenAndServe(":8005", nil)
+	go func() {
+		if err := editor.Server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+		log.Println("Stopped serving new connections.")
+	}()
+	//	sigChan := make(chan os.Signal, 1)
+	signal.Notify(editor.Quit, syscall.SIGINT, syscall.SIGTERM)
+	<-editor.Quit
+
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
+
+	if err := editor.Server.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("HTTP shutdown error: %v", err)
+	}
+	log.Println("Graceful shutdown complete.")
+
 }
 
 // func keEditor(w http.ResponseWriter, r *http.Request) {

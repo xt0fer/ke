@@ -4,11 +4,11 @@ import "fmt"
 
 /*search for a string and replace it with another string */
 func (e *Editor) queryReplace() {
-	e.Searchtext = e.GetInput("Query replace: ")
+	e.Searchtext = e.GetMinibufferInput("Query replace: ")
 	if len(e.Searchtext) < 1 {
 		return
 	}
-	e.Replace = e.GetInput("With: ")
+	e.Replace = e.GetMinibufferInput("With: ")
 	slen := len(e.Searchtext)
 	bp := e.CurrentBuffer
 	opoint := bp.Point
@@ -38,7 +38,7 @@ outer:
 		e.Display(e.CurrentWindow, true)
 
 		if ask == true {
-			answer := e.GetInput(question)
+			answer := e.GetMinibufferInput(question)
 
 		inner:
 			for {
@@ -61,7 +61,7 @@ outer:
 				case 'q': /* controlled exit */
 					break outer
 				default: /* help me */
-					answer = e.GetInput("(y)es, (n)o, (!)do the rest, (q)uit: ")
+					answer = e.GetMinibufferInput("(y)es, (n)o, (!)do the rest, (q)uit: ")
 					//continue inner
 				}
 			}

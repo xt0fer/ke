@@ -10,6 +10,9 @@ func (e *Editor) Refresh() {}
 
 // PosixFile foo
 func (e *Editor) PosixFile(fname string) bool {
+	if len(fname) == 0 {
+		return false
+	}
 	fn := []rune(fname)
 	if fn[0] == '_' {
 		return false

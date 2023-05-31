@@ -139,7 +139,7 @@ func (t *Term) Flush() {
 }
 
 func (t *Term) Clear() {
-
+	t.Blank()
 }
 
 func (t *Term) Size() (int, int) {
