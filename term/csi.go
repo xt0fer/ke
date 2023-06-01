@@ -24,22 +24,22 @@ func CSIEnd() string {
 }
 
 // SHOWCUR - dhow cursor
-func CURBLK() string {
-	return (fmt.Sprintf("%s0 q", CSI))
-}
-func CURSHOW() string {
-	return (fmt.Sprintf("%s?25h", CSI))
-}
-func CURHIDE() string {
-	return (fmt.Sprintf("%s?25l", CSI))
-}
+// func CURBLK() string {
+// 	return (fmt.Sprintf("%s0 q", CSI))
+// }
+// func CURSHOW() string {
+// 	return (fmt.Sprintf("%s?25h", CSI))
+// }
+// func CURHIDE() string {
+// 	return (fmt.Sprintf("%s?25l", CSI))
+// }
 
-func DECSET(n int) string {
-	return (fmt.Sprintf("%s?%dh", CSI, n))
-}
-func DECRESET(n int) string {
-	return (fmt.Sprintf("%s?%dl", CSI, n))
-}
+// func DECSET(n int) string {
+// 	return (fmt.Sprintf("%s?%dh", CSI, n))
+// }
+// func DECRESET(n int) string {
+// 	return (fmt.Sprintf("%s?%dl", CSI, n))
+// }
 
 // CUU - Cursor Up
 func CUU(n int) string {

@@ -34,6 +34,22 @@
                     console.log(">sending", ch)
                 }
             });
+            $(window).on("keydown", function(event) {
+                if (event.keyCode === 17 || event.KeyCode === 18) {
+                    // filter out control and alt naked events
+                    console.log(">ev control or alt", event)
+                } else {
+                    e = event;
+
+                    if ((e.keyCode == '38') || (e.keyCode == '40') || (e.keyCode == '37') || (e.keyCode == '39')) {
+                        ch = VT100.InputString(event);
+                        console.log(">arrow ev", event)
+                        socket.send(ch);
+                        console.log(">arrow sending", ch)
+                    }
+                }
+            });
+
         };
         socket.onmessage = function(e) {
             vt100.clear();

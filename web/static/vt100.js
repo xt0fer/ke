@@ -85,13 +85,13 @@ function VT100(wd, ht, scr_id) {
     this.scrolled_ = 0;
     this.bkgd_ = {
         mode: VT100.A_NORMAL,
-        fg: VT100.COLOR_YELLOW,
-        bg: VT100.COLOR_BLACK
+        fg: VT100.KY_FORE,
+        bg: VT100.KY_BACK
     };
     this.c_attr_ = {
         mode: VT100.A_NORMAL,
-        fg: VT100.COLOR_YELLOW,
-        bg: VT100.COLOR_BLACK
+        fg: VT100.KY_FORE,
+        bg: VT100.KY_BACK
     };
     this.text_ = new Array(ht);
     this.attr_ = new Array(ht);
@@ -115,6 +115,9 @@ function VT100(wd, ht, scr_id) {
 }
 
 // public constants -- colours and colour pairs
+VT100.KY_BACK = 61;
+VT100.KY_FORE = 62;
+
 VT100.COLOR_BLACK = 0;
 VT100.COLOR_BLUE = 1;
 VT100.COLOR_GREEN = 2;
@@ -152,7 +155,9 @@ VT100.the_vt_ = undefined;
 // *** Translate Browser Events into vt100 terminal characters
 // ***
 VT100.InputString = function(e) {
+    console.log("input " + e.key)
     if (e.ctrlKey) {
+        console.log("ctrl " + e.key)
         let kk = (e.key).charCodeAt();
         if (e.ctrlKey && (kk >= 65 && kk <= 90)) {
             return String.fromCharCode(e.key - 64);
@@ -181,6 +186,7 @@ VT100.InputString = function(e) {
         }
     }
 
+    console.log("Key");
     switch (e.key) {
         case "Backspace":
             return "\x08";
@@ -196,13 +202,13 @@ VT100.InputString = function(e) {
             return "\x1b[4~";
         case "Home":
             return "\x1b[1~";
-        case "LeftArrow":
+        case "LeftArrow", "ArrowLeft":
             return "\x1b[D";
-        case "UpArrow":
+        case "UpArrow", "ArrowUp":
             return "\x1b[A";
-        case "RightArrow":
+        case "RightArrow", "ArrowRight":
             return "\x1b[C";
-        case "DownArrow":
+        case "DownArrow", "ArrowDown":
             return "\x1b[B";
         case "Delete":
             return "\x7f";
@@ -236,7 +242,7 @@ VT100.InputString = function(e) {
             //     return "\x1b[24~";
     }
 
-    //console.log("default " + e.key)
+    console.log("default " + e.key)
     return e.key; //e.chr;
 }
 
@@ -256,6 +262,20 @@ VT100.prototype.html_colours_ = function(attr) {
     var fg, bg, co0, co1;
     fg = attr.fg;
     bg = attr.bg;
+    if (bg == VT100.KY_BACK) {
+        return {
+            f: '#FFF926',
+            b: '#AEAEAE'
+        };
+
+    } // VT100.A_REVERSE
+    if ((bg == VT100.KY_BACK) && (attr.mode & VT100.A_REVERSE)) {
+        return {
+            b: '#FFF926',
+            f: '#AEAEAE'
+        };
+
+    }
     switch (attr.mode & (VT100.A_REVERSE | VT100.A_DIM | VT100.A_BOLD)) {
         case 0:
         case VT100.A_DIM | VT100.A_BOLD:
@@ -590,6 +610,7 @@ VT100.prototype.standout = function() {
 }
 
 VT100.prototype.write = function(stuff) {
+    console.log(">> " + stuff)
     var ch, x, r, c, i, j, yx, myx;
     for (i = 0; i < stuff.length; ++i) {
         ch = stuff.charAt(i);
@@ -832,7 +853,7 @@ VT100.prototype.write = function(stuff) {
                         // 3g: clear all tabs (ignored)
                         break;
                     default:
-                        this.warn("write:: unknown command: " + ch);
+                        this.warn("write:: unknown command: 0x" + ch.charCodeAt(0).toString(16));
                         this.csi_parms_ = [];
                         break;
                 }

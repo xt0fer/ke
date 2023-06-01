@@ -138,10 +138,15 @@ func (e *Editor) StartEditor(argv []string, argc int,
 			}
 			//log.Printf("ev: |%x| |%s| \n", msg, string(msg))
 
-			event := e.Term.EventFromKey(msg)
-			log.Println("queue event ", event.String())
+			// event := e.Term.EventFromKey(msg)
+			// log.Println("queue event ", event.String())
 
-			e.InputChan <- event
+			// e.InputChan <- event
+			for _, b := range msg {
+				ev := e.Term.EventFromByte(b)
+				log.Println("queue event ", ev.String())
+				e.InputChan <- ev
+			}
 			log.Println("InputChan <- len ", len(e.InputChan))
 		}
 		log.Println("ending input loop")

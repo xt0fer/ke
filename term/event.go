@@ -73,7 +73,25 @@ const (
 	MouseRelease
 	MouseWheelUp
 	MouseWheelDown
+	KeyError
 )
+
+func StringToKey(s string) Key {
+	if s == "LeftArrow" {
+		return KeyArrowLeft
+	}
+	if s == "RightArrow" {
+		return KeyArrowRight
+	}
+	if s == "UpArrow" {
+		return KeyArrowUp
+	}
+	if s == "DownArrow" {
+		return KeyArrowDown
+	}
+
+	return KeyError
+}
 
 const (
 	KeyCtrlTilde      Key = 0x00

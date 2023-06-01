@@ -84,19 +84,34 @@ func (t *Term) PollEvent() Event {
 	return e
 }
 
+func (t *Term) EventFromByte(b byte) Event {
+	e := Event{}
+	e.Type = EventKey
+	e.Ch = rune(b)
+	return e
+}
 func (t *Term) EventFromKey(key []byte) Event {
+	log.Println("EventFromKey", len(key), key)
 	//ru, _, err := t.Input.ReadRune()
 	ru, n := utf8.DecodeRune(key)
 	if ru == utf8.RuneError && n == 1 {
 		log.Println("error on recv", ru)
 	}
 	e := Event{}
+	if len(key) > 1 {
+		e.Type = EventKey
+		e.Key = StringToKey(string(key))
+		e.Ch = 0
+		return e
+	}
 	if (Key(ru) >= KeyCtrlTilde && Key(ru) <= KeySpace) ||
 		Key(ru) >= KeyHome && Key(ru) <= KeyArrowRight {
 		e.Type = EventKey
 		e.Key = Key(ru)
 		e.Ch = 0
 		//log.Println(e.String())
+		return e
+
 	} else {
 		e.Type = EventKey
 		e.Ch = ru
