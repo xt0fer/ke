@@ -262,19 +262,19 @@ VT100.prototype.html_colours_ = function(attr) {
     var fg, bg, co0, co1;
     fg = attr.fg;
     bg = attr.bg;
+    // is we are using Kris colors, and reverse, it's the cursor!
     if (((bg == VT100.KY_BACK) || (bg == VT100.KY_FORE)) && (attr.mode & VT100.A_REVERSE)) {
         return {
             f: '#AEAEAE',
             b: '#FFF926'
         };
-
     }
+    // otherwise, its just a standard char
     if (bg == VT100.KY_BACK) {
         return {
             f: '#FFF926',
             b: '#AEAEAE'
         };
-
     }
 
     switch (attr.mode & (VT100.A_REVERSE | VT100.A_DIM | VT100.A_BOLD)) {
