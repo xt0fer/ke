@@ -92,8 +92,30 @@ func (t *Term) EventFromByte(b byte) Event {
 	return e
 }
 func (t *Term) EventFromKey(key []byte) Event {
-	log.Println("EventFromKey", len(key), key)
-	//ru, _, err := t.Input.ReadRune()
+	//log.Println("EventFromKey", len(key), key)
+	// this case is when the arrow keys come in.
+	// "27,91,{65,66,67,68}"
+	if len(key) == 3 && key[0] == 27 && key[1] == 91 {
+		e := Event{}
+		e.Type = EventKey
+		e.Ch = 0
+		switch key[2] {
+		case 65:
+			e.Key = KeyArrowUp
+			return e
+		case 66:
+			e.Key = KeyArrowDown
+			return e
+		case 67:
+			e.Key = KeyArrowRight
+			return e
+		case 68:
+			e.Key = KeyArrowLeft
+			return e
+		}
+		// if it ain't one of the four, do normal process
+	}
+	// otherwise decode the rune (possibly multi-byte)
 	ru, n := utf8.DecodeRune(key)
 	if ru == utf8.RuneError && n == 1 {
 		log.Println("error on recv", ru)

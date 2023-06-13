@@ -262,20 +262,21 @@ VT100.prototype.html_colours_ = function(attr) {
     var fg, bg, co0, co1;
     fg = attr.fg;
     bg = attr.bg;
+    if (((bg == VT100.KY_BACK) || (bg == VT100.KY_FORE)) && (attr.mode & VT100.A_REVERSE)) {
+        return {
+            f: '#AEAEAE',
+            b: '#FFF926'
+        };
+
+    }
     if (bg == VT100.KY_BACK) {
         return {
             f: '#FFF926',
             b: '#AEAEAE'
         };
 
-    } // VT100.A_REVERSE
-    if ((bg == VT100.KY_BACK) && (attr.mode & VT100.A_REVERSE)) {
-        return {
-            b: '#FFF926',
-            f: '#AEAEAE'
-        };
-
     }
+
     switch (attr.mode & (VT100.A_REVERSE | VT100.A_DIM | VT100.A_BOLD)) {
         case 0:
         case VT100.A_DIM | VT100.A_BOLD:
@@ -527,6 +528,7 @@ VT100.prototype.refresh = function() {
                 // Draw the cursor here.
                 n_at = this._cloneAttr(n_at);
                 n_at.mode ^= VT100.A_REVERSE;
+                console.log("cursor " + c + ":" + r)
             }
             // If the attributes changed, make a new span.
             if (n_at.mode != at.mode || n_at.fg != at.fg || n_at.bg != at.bg) {

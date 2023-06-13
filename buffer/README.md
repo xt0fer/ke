@@ -1,9 +1,11 @@
 ## Buffer
 
-the buffer package uses a piece-table to manage the contents for a text editor.
+the buffer package uses a piece-table in Go to manage the contents for a text editor.
 
 ### Operations
+
 #### Index
+
 Definition: Index(i): return the character at position i
 To retrieve the i-th character, the appropriate entry in a piece table is read.
 
@@ -11,11 +13,13 @@ Example
 Given the following buffers and piece table:
 
 Buffer	Content
+
 - Original file	`ipsum sit amet`
 - Add file	Lorem deletedtext dolor
 
 Piece table
-Which	Start Index	Length
+
+- Which	Start Index	Length
 - Add	0	6
 - Original	0	6
 - Add	17	6

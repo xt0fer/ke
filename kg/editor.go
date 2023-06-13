@@ -20,7 +20,7 @@ func checkErr(e error) {
 }
 
 const (
-	version        = "kg 2.0, Public Domain, May 2023, Kristofer Younger,  No warranty."
+	version        = "ke 2.0, Public Domain, May 2023, Kristofer Younger,  No warranty."
 	nomark         = -1
 	gapchunk       = 16 //= 8096
 	idDefault      = 1
@@ -108,8 +108,8 @@ func (e *Editor) StartEditor(argv []string, argc int,
 	e.UpdateDisplay()
 	e.Term.Flush()
 
-	go func() {
-		log.Println("starting event handle loop")
+	go func() { // handle event loop
+		log.Println("starting handle event loop")
 		for {
 			event := <-e.InputChan
 			log.Println("DEqueue ", event.String())
@@ -136,17 +136,17 @@ func (e *Editor) StartEditor(argv []string, argc int,
 				log.Println("unable to get message from frontend")
 				return
 			}
-			//log.Printf("ev: |%x| |%s| \n", msg, string(msg))
+			log.Printf("ev: |%x| |%s| \n", msg, string(msg))
 
-			// event := e.Term.EventFromKey(msg)
-			// log.Println("queue event ", event.String())
+			event := e.Term.EventFromKey(msg)
+			log.Println("queue event ", event.String())
 
-			// e.InputChan <- event
-			for _, b := range msg {
-				ev := e.Term.EventFromByte(b)
-				log.Println("queue event ", ev.String())
-				e.InputChan <- ev
-			}
+			e.InputChan <- event
+			// for _, b := range msg {
+			// 	ev := e.Term.EventFromByte(b)
+			// 	log.Println("queue event ", ev.String())
+			// 	e.InputChan <- ev
+			// }
 			log.Println("InputChan <- len ", len(e.InputChan))
 		}
 		log.Println("ending input loop")
@@ -160,7 +160,16 @@ func (e *Editor) HandleEvent(ev *term.Event) bool {
 	e.msg("")
 	switch ev.Type {
 	case term.EventKey:
-		if ev.Ch != 0 && (e.CtrlXFlag || e.EscapeFlag) {
+		if ev.Ch >= 0 && ev.Ch <= 32 {
+			ok := e.OnSysKey(ev)
+			if !ok {
+				log.Println("no command found. 0")
+				e.msg("no command found. 0")
+			}
+			if e.Done {
+				return false
+			}
+		} else if ev.Ch != 0 && (e.CtrlXFlag || e.EscapeFlag) {
 			ok := e.OnSysKey(ev)
 			if !ok {
 				log.Println("no command found. 1")
@@ -365,15 +374,17 @@ func (e *Editor) Display(wp *Window, shouldDrawCursor bool) {
 }
 
 func (e *Editor) blankFrom(r, c int) { // blank line to end of term
-	// hmm. deep bug? why e.cols -1 ??
+	showBlanks := false
 	ch := ' '
 	for k := c; k < e.Cols; k++ {
-		ch = '~'
-		if k == 0 {
-			ch = '^'
-		}
-		if k == e.Cols-1 {
-			ch = '$'
+		if showBlanks {
+			ch = '~'
+			if k == 0 {
+				ch = '^'
+			}
+			if k == e.Cols-1 {
+				ch = '$'
+			}
 		}
 		e.Term.SetCell(k, r, ch, e.FGColor, term.ColorDefault)
 	}
